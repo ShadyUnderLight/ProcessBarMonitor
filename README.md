@@ -1,5 +1,7 @@
 # ProcessBarMonitor
 
+[中文说明 / 中文 README](README.zh-CN.md)
+
 A native macOS menu bar app for watching CPU, memory, thermal state, and top processes at a glance.
 
 ## What it does
