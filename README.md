@@ -1,16 +1,47 @@
 # ProcessBarMonitor
 
-A native macOS menu bar app MVP built with SwiftUI.
+A native macOS menu bar app for watching CPU, memory, thermal state, and top processes at a glance.
+
+## What it does
+- Shows a compact live summary in the macOS menu bar
+- Displays overall CPU usage, memory usage, and thermal state
+- Lists top apps by CPU and by memory
+- Supports manual refresh, search, and adjustable row count
+- Includes launch-at-login support
+
+## Current status
+This is an early but usable MVP.
 
 ## Features
 - Menu bar utility with live summary in the menu bar title
 - Overall CPU usage
 - Memory used / total memory
 - Thermal state (Nominal / Fair / Serious / Critical)
-- Top 8 processes by CPU
-- Top 8 processes by memory
-- Manual refresh + automatic refresh every 2 seconds
-- Best-effort CPU temperature support placeholder
+- Top apps by CPU
+- Top apps by memory
+- Manual refresh + automatic refresh
+- Best-effort CPU temperature support
+- Search box for filtering by app name / path / PID / bundle id
+- Adjustable process row count
+- Quit button in the panel
+
+## Installation
+### Download a packaged app
+Download the latest release from GitHub Releases and unzip `ProcessBarMonitor.app`.
+
+### Install locally from this repo
+```bash
+./install_app.sh
+```
+
+## Development
+Open the project in Xcode and run it there, or use the included helper scripts.
+
+Build an app bundle locally:
+
+```bash
+./build_app.sh
+```
 
 ## Notes on CPU temperature
 macOS does not expose CPU temperature through a stable public API for normal apps. This app therefore:
@@ -18,41 +49,16 @@ macOS does not expose CPU temperature through a stable public API for normal app
 - falls back to `--` plus thermal state if no helper is available
 - does **not** require sudo or private entitlements
 
-## Project structure
-- `Sources/ProcessBarMonitor/` — app source
-- `ProcessBarMonitor/Info.plist` — optional bundle metadata reference
+## Known limitations
+- CPU temperature is best-effort rather than guaranteed
+- Process sampling can still be relatively expensive on some systems
+- The app is still being polished for wider public release
 
-## Run
-Open the folder in Xcode and run the `ProcessBarMonitor` package target, or build with SwiftPM if your local Swift/Xcode toolchain supports SwiftUI app executables.
-
-Typical local commands:
-
-```bash
-cd /tmp/process-bar-monitor
-swift run
-```
-
-If you want a proper `.app` bundle, the easiest route is opening this package in Xcode and using Product → Archive / Run.
-
-## Current limitation on this machine
-I could not verify a local build in the current environment because the active Command Line Tools / Swift SDK toolchain is mismatched with the installed Swift compiler, and full Xcode is not currently selected.
-
-Observed issue:
-- `xcodebuild` unavailable because active developer directory points to CommandLineTools
-- Swift SDK/compiler mismatch prevents a clean compile here
-
-## Included in current MVP
-- Top CPU and top memory process lists
-- Search box for filtering by process name / path / PID
-- Adjustable process count (8 / 12 / 20)
-- Manual refresh button
-- Quit button in the panel
-
-## Possible next upgrades
-- Add sparklines/history
-- Add per-process kill button
-- Add optional third-party sensor integration for real CPU temperature
-- Add launch at login
+## Roadmap ideas
+- Sparklines / history
+- Per-process actions
+- Better sensor integrations
+- Further performance tuning
 
 ## Maintainer notes
 Release workflow is documented in `RELEASING.md`.
