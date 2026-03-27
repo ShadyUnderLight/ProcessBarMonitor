@@ -53,3 +53,21 @@ Observed issue:
 - Add per-process kill button
 - Add optional third-party sensor integration for real CPU temperature
 - Add launch at login
+
+## Release process
+Create a packaged GitHub release with:
+
+```bash
+./release.sh 1.0.1 2
+```
+
+Arguments:
+- first argument: semantic version without or with `v` prefix
+- second argument: build number (optional, defaults to `1`)
+
+What it does:
+- builds the app bundle
+- stamps version/build into `Info.plist`
+- zips `dist/ProcessBarMonitor.app`
+- creates or updates the Git tag and GitHub Release
+- uploads the zipped release asset
