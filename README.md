@@ -43,6 +43,9 @@ Build an app bundle locally:
 ./build_app.sh
 ```
 
+## CI
+GitHub Actions now builds the Swift package and app bundle automatically on pushes, pull requests, and version tags.
+
 ## Notes on CPU temperature
 macOS does not expose CPU temperature through a stable public API for normal apps. This app therefore:
 - tries to read temperature from installed helper tools such as `osx-cpu-temp` or `istats`
