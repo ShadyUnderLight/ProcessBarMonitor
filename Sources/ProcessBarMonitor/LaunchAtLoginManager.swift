@@ -29,23 +29,37 @@ final class LaunchAtLoginManager: ObservableObject {
             throw LaunchAtLoginError.unsupportedOS
         }
 
-        if enabled {
-            try SMAppService.mainApp.register()
-        } else {
-            try SMAppService.mainApp.unregister()
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+        } catch {
+            throw LaunchAtLoginError.serviceFailure(underlying: error.localizedDescription)
         }
 
         refreshState()
+
+        if enabled && !isEnabled {
+            throw LaunchAtLoginError.requiresApproval
+        }
     }
 }
 
 enum LaunchAtLoginError: LocalizedError {
     case unsupportedOS
+    case requiresApproval
+    case serviceFailure(underlying: String)
 
     var errorDescription: String? {
         switch self {
         case .unsupportedOS:
             return "Launch at login requires macOS 13 or later."
+        case .requiresApproval:
+            return "macOS accepted the login item request, but it may still need approval in System Settings → General → Login Items."
+        case .serviceFailure(let underlying):
+            return "Could not update the login item: \(underlying)"
         }
     }
 }

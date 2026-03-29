@@ -1,6 +1,22 @@
 import Foundation
 import Combine
 
+private struct SettingsStore {
+    let defaults: UserDefaults
+
+    func int(forKey key: String) -> Int? {
+        defaults.object(forKey: key) as? Int
+    }
+
+    func string(forKey key: String) -> String? {
+        defaults.string(forKey: key)
+    }
+
+    func set(_ value: Any?, forKey key: String) {
+        defaults.set(value, forKey: key)
+    }
+}
+
 @MainActor
 final class MonitorViewModel: ObservableObject {
     let launchAtLogin = LaunchAtLoginManager()
@@ -16,21 +32,22 @@ final class MonitorViewModel: ObservableObject {
     @Published private(set) var memoryHistory: [MetricPoint] = []
     @Published private(set) var temperatureHistory: [MetricPoint] = []
     @Published private(set) var isMenuExpanded = false
+    @Published var statusMessage: String?
 
     @Published var searchText = ""
     @Published var processLimit: Int {
-        didSet { defaults.set(processLimit, forKey: Keys.processLimit) }
+        didSet { settings.set(processLimit, forKey: Keys.processLimit) }
     }
     @Published var temperatureMode: TemperatureMode {
-        didSet { defaults.set(temperatureMode.rawValue, forKey: Keys.temperatureMode) }
+        didSet { settings.set(temperatureMode.rawValue, forKey: Keys.temperatureMode) }
     }
     @Published var menuBarDisplayMode: MenuBarDisplayMode {
-        didSet { defaults.set(menuBarDisplayMode.rawValue, forKey: Keys.menuBarDisplayMode) }
+        didSet { settings.set(menuBarDisplayMode.rawValue, forKey: Keys.menuBarDisplayMode) }
     }
 
     private let metricsProvider = SystemMetricsProvider()
     private let processProvider = ProcessSnapshotProvider()
-    private let defaults: UserDefaults
+    private let settings: SettingsStore
     private var refreshTask: Task<Void, Never>?
     private var lastProcessRefresh = Date.distantPast
 
@@ -41,19 +58,20 @@ final class MonitorViewModel: ObservableObject {
     }
 
     init(defaults: UserDefaults = .standard) {
-        self.defaults = defaults
+        let settings = SettingsStore(defaults: defaults)
+        self.settings = settings
 
-        let savedProcessLimit = defaults.object(forKey: Keys.processLimit) as? Int ?? 5
+        let savedProcessLimit = settings.int(forKey: Keys.processLimit) ?? 5
         processLimit = [5, 8, 12, 20].contains(savedProcessLimit) ? savedProcessLimit : 5
 
-        if let rawTemperatureMode = defaults.string(forKey: Keys.temperatureMode),
+        if let rawTemperatureMode = settings.string(forKey: Keys.temperatureMode),
            let parsedTemperatureMode = TemperatureMode(rawValue: rawTemperatureMode) {
             temperatureMode = parsedTemperatureMode
         } else {
             temperatureMode = .hottestCPU
         }
 
-        if let rawMenuBarDisplayMode = defaults.string(forKey: Keys.menuBarDisplayMode),
+        if let rawMenuBarDisplayMode = settings.string(forKey: Keys.menuBarDisplayMode),
            let parsedMenuBarDisplayMode = MenuBarDisplayMode(rawValue: rawMenuBarDisplayMode) {
             menuBarDisplayMode = parsedMenuBarDisplayMode
         } else {
@@ -108,6 +126,7 @@ final class MonitorViewModel: ObservableObject {
 
     func refresh(forceProcesses: Bool = false) async {
         guard !isRefreshing else { return }
+        statusMessage = nil
         isRefreshing = true
         defer { isRefreshing = false }
 
@@ -157,6 +176,20 @@ final class MonitorViewModel: ObservableObject {
 
         topCPUProcesses = Array(filtered.sorted(by: { $0.cpuPercent > $1.cpuPercent }).prefix(processLimit))
         topMemoryProcesses = Array(filtered.sorted(by: { $0.memoryMB > $1.memoryMB }).prefix(processLimit))
+    }
+
+    func setLaunchAtLogin(_ enabled: Bool) {
+        do {
+            try launchAtLogin.setEnabled(enabled)
+            statusMessage = enabled ? "Launch at login enabled." : "Launch at login disabled."
+        } catch {
+            statusMessage = error.localizedDescription
+            launchAtLogin.refreshState()
+        }
+    }
+
+    func clearStatusMessage() {
+        statusMessage = nil
     }
 
     func thermalText(_ state: ProcessInfo.ThermalState) -> String {
