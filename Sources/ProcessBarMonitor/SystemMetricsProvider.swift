@@ -1,7 +1,7 @@
 import Foundation
 import Darwin
 
-final class SystemMetricsProvider {
+actor SystemMetricsProvider {
     private var previousCPUInfo: host_cpu_load_info?
     private var cachedTemperature: Double?
     private var lastTemperatureRefresh = Date.distantPast

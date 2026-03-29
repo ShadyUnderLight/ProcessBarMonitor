@@ -75,23 +75,25 @@ final class MonitorViewModel: ObservableObject {
     func refresh(forceProcesses: Bool = false) async {
         guard !isRefreshing else { return }
         isRefreshing = true
-
-        let snapshotSummary = metricsProvider.snapshot(temperatureMode: temperatureMode)
-        summary = snapshotSummary
-        appendHistory(cpu: snapshotSummary.cpuPercent, memory: snapshotSummary.memoryPressurePercent, temperature: snapshotSummary.cpuTemperatureC)
+        defer { isRefreshing = false }
 
         let shouldRefreshProcesses = forceProcesses
             || isMenuExpanded
             || allProcesses.isEmpty
             || Date().timeIntervalSince(lastProcessRefresh) >= processRefreshInterval
 
-        if shouldRefreshProcesses {
-            allProcesses = processProvider.snapshot()
+        async let summaryTask = metricsProvider.snapshot(temperatureMode: temperatureMode)
+        async let processTask: [ProcessStat]? = shouldRefreshProcesses ? processProvider.snapshot() : nil
+
+        let snapshotSummary = await summaryTask
+        summary = snapshotSummary
+        appendHistory(cpu: snapshotSummary.cpuPercent, memory: snapshotSummary.memoryPressurePercent, temperature: snapshotSummary.cpuTemperatureC)
+
+        if let processes = await processTask {
+            allProcesses = processes
             lastProcessRefresh = Date()
             recomputeVisibleProcesses()
         }
-
-        isRefreshing = false
     }
 
     private func appendHistory(cpu: Double, memory: Double, temperature: Double?) {

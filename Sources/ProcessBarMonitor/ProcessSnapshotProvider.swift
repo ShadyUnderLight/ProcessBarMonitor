@@ -1,10 +1,11 @@
 import Foundation
 import AppKit
 
-final class ProcessSnapshotProvider {
+actor ProcessSnapshotProvider {
     private let shellPath = "/bin/zsh"
     private let psCommand = "/bin/ps -axo pid=,comm=,%cpu=,rss="
-    private let processorCount = max(ProcessInfo.processInfo.activeProcessorCount, 1)
+    private let metadataRefreshInterval: TimeInterval = 30
+    private let maxMetadataLookupsPerSnapshot = 48
 
     private struct RawProcess {
         let pid: Int
@@ -12,6 +13,19 @@ final class ProcessSnapshotProvider {
         let rawCPUPercent: Double
         let memoryMB: Double
     }
+
+    private struct AppMetadata {
+        let appName: String
+        let bundleIdentifier: String?
+        let commandKey: String
+    }
+
+    private struct CachedMetadata {
+        let metadata: AppMetadata
+        let updatedAt: Date
+    }
+
+    private var metadataCache: [Int: CachedMetadata] = [:]
 
     func snapshot() -> [ProcessStat] {
         let process = Process()
@@ -33,7 +47,11 @@ final class ProcessSnapshotProvider {
 
         let data = output.fileHandleForReading.readDataToEndOfFile()
         guard let raw = String(data: data, encoding: .utf8) else { return [] }
-        return aggregate(parsePSOutput(raw))
+        let rawProcesses = parsePSOutput(raw)
+        let prioritizedPIDs = prioritizedMetadataPIDs(from: rawProcesses)
+        refreshMetadataCache(for: rawProcesses, prioritizedPIDs: prioritizedPIDs)
+        pruneMetadataCache(validPIDs: Set(rawProcesses.map(\.pid)))
+        return aggregate(rawProcesses)
     }
 
     private func parsePSOutput(_ raw: String) -> [RawProcess] {
@@ -51,10 +69,50 @@ final class ProcessSnapshotProvider {
                 return RawProcess(
                     pid: pid,
                     command: String(parts[1]),
-                    rawCPUPercent: cpu,
+                    rawCPUPercent: max(cpu, 0),
                     memoryMB: rssKB / 1024
                 )
             }
+    }
+
+    private func prioritizedMetadataPIDs(from rawProcesses: [RawProcess]) -> Set<Int> {
+        let topCPU = rawProcesses.sorted { $0.rawCPUPercent > $1.rawCPUPercent }.prefix(maxMetadataLookupsPerSnapshot)
+        let topMemory = rawProcesses.sorted { $0.memoryMB > $1.memoryMB }.prefix(maxMetadataLookupsPerSnapshot)
+        return Set(topCPU.map(\.pid)).union(topMemory.map(\.pid))
+    }
+
+    private func refreshMetadataCache(for rawProcesses: [RawProcess], prioritizedPIDs: Set<Int>) {
+        let now = Date()
+
+        for raw in rawProcesses where prioritizedPIDs.contains(raw.pid) {
+            if let cached = metadataCache[raw.pid], now.timeIntervalSince(cached.updatedAt) < metadataRefreshInterval {
+                continue
+            }
+
+            let metadata = resolveMetadata(for: raw)
+            metadataCache[raw.pid] = CachedMetadata(metadata: metadata, updatedAt: now)
+        }
+    }
+
+    private func pruneMetadataCache(validPIDs: Set<Int>) {
+        metadataCache = metadataCache.filter { validPIDs.contains($0.key) }
+    }
+
+    private func resolveMetadata(for raw: RawProcess) -> AppMetadata {
+        if let runningApp = NSRunningApplication(processIdentifier: pid_t(raw.pid)) {
+            let appName = runningApp.localizedName ?? fallbackAppName(for: raw.command)
+            return AppMetadata(
+                appName: appName,
+                bundleIdentifier: runningApp.bundleIdentifier,
+                commandKey: raw.command
+            )
+        }
+
+        return AppMetadata(
+            appName: fallbackAppName(for: raw.command),
+            bundleIdentifier: nil,
+            commandKey: raw.command
+        )
     }
 
     private func aggregate(_ rawProcesses: [RawProcess]) -> [ProcessStat] {
@@ -72,15 +130,16 @@ final class ProcessSnapshotProvider {
         var aggregates: [String: Aggregate] = [:]
 
         for raw in rawProcesses {
-            let runningApp = NSRunningApplication(processIdentifier: pid_t(raw.pid))
-            let bundleIdentifier = runningApp?.bundleIdentifier
-            let appName = runningApp?.localizedName ?? fallbackAppName(for: raw.command)
-            let key = bundleIdentifier ?? appName
-            let normalizedCPU = min(max(raw.rawCPUPercent / Double(processorCount), 0), 100)
-            let child = ProcessChildStat(pid: raw.pid, command: raw.command, cpuPercent: normalizedCPU, memoryMB: raw.memoryMB)
+            let metadata = metadataCache[raw.pid]?.metadata ?? AppMetadata(
+                appName: fallbackAppName(for: raw.command),
+                bundleIdentifier: nil,
+                commandKey: raw.command
+            )
+            let key = aggregateKey(for: metadata)
+            let child = ProcessChildStat(pid: raw.pid, command: raw.command, cpuPercent: raw.rawCPUPercent, memoryMB: raw.memoryMB)
 
             if var existing = aggregates[key] {
-                existing.cpuPercent += normalizedCPU
+                existing.cpuPercent += raw.rawCPUPercent
                 existing.memoryMB += raw.memoryMB
                 existing.processCount += 1
                 existing.childProcesses.append(child)
@@ -90,9 +149,9 @@ final class ProcessSnapshotProvider {
                 aggregates[key] = Aggregate(
                     pid: raw.pid,
                     command: raw.command,
-                    appName: appName,
-                    bundleIdentifier: bundleIdentifier,
-                    cpuPercent: normalizedCPU,
+                    appName: metadata.appName,
+                    bundleIdentifier: metadata.bundleIdentifier,
+                    cpuPercent: raw.rawCPUPercent,
                     memoryMB: raw.memoryMB,
                     processCount: 1,
                     childProcesses: [child]
@@ -106,7 +165,7 @@ final class ProcessSnapshotProvider {
                 command: $0.command,
                 appName: $0.appName,
                 bundleIdentifier: $0.bundleIdentifier,
-                cpuPercent: min($0.cpuPercent, 100),
+                cpuPercent: $0.cpuPercent,
                 memoryMB: $0.memoryMB,
                 processCount: $0.processCount,
                 childProcesses: $0.childProcesses.sorted {
@@ -117,6 +176,14 @@ final class ProcessSnapshotProvider {
                 }
             )
         }
+    }
+
+    private func aggregateKey(for metadata: AppMetadata) -> String {
+        if let bundleIdentifier = metadata.bundleIdentifier {
+            return "bundle:\(bundleIdentifier)"
+        }
+
+        return "command:\(metadata.commandKey)"
     }
 
     private func fallbackAppName(for command: String) -> String {
