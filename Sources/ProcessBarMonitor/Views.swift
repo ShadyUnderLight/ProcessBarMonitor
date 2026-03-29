@@ -263,7 +263,7 @@ struct MenuBarContentView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Top Apps by CPU")
                         .font(.headline)
-                    Text("Click an app to inspect grouped child processes.")
+                    Text("Click an app to inspect grouped child processes. CPU uses raw per-process percentages, so totals can exceed 100% on multicore Macs.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     processHeader
