@@ -250,13 +250,19 @@ struct MenuBarContentView: View {
                 Toggle("Launch at login", isOn: Binding(
                     get: { viewModel.launchAtLogin.isEnabled },
                     set: { newValue in
-                        do {
-                            try viewModel.launchAtLogin.setEnabled(newValue)
-                        } catch {
-                            NSSound.beep()
-                        }
+                        viewModel.setLaunchAtLogin(newValue)
                     }
                 ))
+
+                if let statusMessage = viewModel.statusMessage {
+                    Text(statusMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, -4)
+                        .onTapGesture {
+                            viewModel.clearStatusMessage()
+                        }
+                }
 
                 Divider()
 
