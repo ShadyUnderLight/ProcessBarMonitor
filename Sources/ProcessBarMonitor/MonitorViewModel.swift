@@ -18,14 +18,48 @@ final class MonitorViewModel: ObservableObject {
     @Published private(set) var isMenuExpanded = false
 
     @Published var searchText = ""
-    @Published var processLimit = 5
-    @Published var temperatureMode: TemperatureMode = .hottestCPU
-    @Published var menuBarDisplayMode: MenuBarDisplayMode = .compact
+    @Published var processLimit: Int {
+        didSet { defaults.set(processLimit, forKey: Keys.processLimit) }
+    }
+    @Published var temperatureMode: TemperatureMode {
+        didSet { defaults.set(temperatureMode.rawValue, forKey: Keys.temperatureMode) }
+    }
+    @Published var menuBarDisplayMode: MenuBarDisplayMode {
+        didSet { defaults.set(menuBarDisplayMode.rawValue, forKey: Keys.menuBarDisplayMode) }
+    }
 
     private let metricsProvider = SystemMetricsProvider()
     private let processProvider = ProcessSnapshotProvider()
+    private let defaults: UserDefaults
     private var refreshTask: Task<Void, Never>?
     private var lastProcessRefresh = Date.distantPast
+
+    private enum Keys {
+        static let processLimit = "processLimit"
+        static let temperatureMode = "temperatureMode"
+        static let menuBarDisplayMode = "menuBarDisplayMode"
+    }
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+
+        let savedProcessLimit = defaults.object(forKey: Keys.processLimit) as? Int ?? 5
+        processLimit = [5, 8, 12, 20].contains(savedProcessLimit) ? savedProcessLimit : 5
+
+        if let rawTemperatureMode = defaults.string(forKey: Keys.temperatureMode),
+           let parsedTemperatureMode = TemperatureMode(rawValue: rawTemperatureMode) {
+            temperatureMode = parsedTemperatureMode
+        } else {
+            temperatureMode = .hottestCPU
+        }
+
+        if let rawMenuBarDisplayMode = defaults.string(forKey: Keys.menuBarDisplayMode),
+           let parsedMenuBarDisplayMode = MenuBarDisplayMode(rawValue: rawMenuBarDisplayMode) {
+            menuBarDisplayMode = parsedMenuBarDisplayMode
+        } else {
+            menuBarDisplayMode = .compact
+        }
+    }
 
     var menuBarTitle: String {
         let cpu = String(format: "%.0f%%", summary.cpuPercent)

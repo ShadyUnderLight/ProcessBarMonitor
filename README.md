@@ -9,7 +9,8 @@ A native macOS menu bar app for watching CPU, memory, thermal state, and top pro
 - Displays overall CPU usage, memory usage, and thermal state
 - Lists top apps by CPU and by memory
 - Supports manual refresh, search, and adjustable row count
-- Includes launch-at-login support
+- Remembers display preferences across launches
+- Includes launch-at-login support via macOS login items
 
 ## Current status
 This is an early but usable MVP.
@@ -25,6 +26,7 @@ This is an early but usable MVP.
 - Best-effort CPU temperature support
 - Search box for filtering by app name / path / PID / bundle id
 - Adjustable process row count
+- Persisted display preferences for menu bar mode, temperature mode, and row count
 - Quit button in the panel
 
 ## Installation
