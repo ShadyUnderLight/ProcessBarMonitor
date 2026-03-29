@@ -51,7 +51,7 @@ Packaged macOS release of $APP_NAME.
 
 ### Artifact
 - $ASSET_NAME
-- SHA-256: `$SHA`
+- SHA-256: \`$SHA\`
 
 ### Notes
 - CPU temperature is best-effort and may fall back to thermal state when no supported helper tool is available.
