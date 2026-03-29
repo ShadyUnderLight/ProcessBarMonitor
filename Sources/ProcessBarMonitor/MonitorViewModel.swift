@@ -104,10 +104,11 @@ final class MonitorViewModel: ObservableObject {
             temperatureHistory.append(MetricPoint(value: last.value))
         }
 
+        // Keep history bounded using prefix to avoid unbounded growth
         let limit = 60
-        if cpuHistory.count > limit { cpuHistory.removeFirst(cpuHistory.count - limit) }
-        if memoryHistory.count > limit { memoryHistory.removeFirst(memoryHistory.count - limit) }
-        if temperatureHistory.count > limit { temperatureHistory.removeFirst(temperatureHistory.count - limit) }
+        if cpuHistory.count > limit { cpuHistory = Array(cpuHistory.suffix(limit)) }
+        if memoryHistory.count > limit { memoryHistory = Array(memoryHistory.suffix(limit)) }
+        if temperatureHistory.count > limit { temperatureHistory = Array(temperatureHistory.suffix(limit)) }
     }
 
     func recomputeVisibleProcesses() {

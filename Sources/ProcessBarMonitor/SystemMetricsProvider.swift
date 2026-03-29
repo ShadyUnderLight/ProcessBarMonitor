@@ -96,14 +96,20 @@ final class SystemMetricsProvider {
         process.executableURL = URL(fileURLWithPath: launchPath)
         process.arguments = arguments
         let output = Pipe()
+        let stderr = Pipe()
         process.standardOutput = output
-        process.standardError = Pipe()
+        process.standardError = stderr
 
         do { try process.run() } catch { return nil }
         process.waitUntilExit()
-        guard process.terminationStatus == 0 else { return nil }
 
+        // Explicitly close pipes and terminate before reading results
         let data = output.fileHandleForReading.readDataToEndOfFile()
+        process.standardOutput = nil
+        process.standardError = nil
+        process.terminate()
+
+        guard process.terminationStatus == 0 else { return nil }
         guard let raw = String(data: data, encoding: .utf8) else { return nil }
         return extractTemperature(from: raw)
     }

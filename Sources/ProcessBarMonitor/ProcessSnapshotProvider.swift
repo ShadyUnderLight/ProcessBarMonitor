@@ -6,6 +6,21 @@ final class ProcessSnapshotProvider {
     private let psCommand = "/bin/ps -axo pid=,comm=,%cpu=,rss="
     private let processorCount = max(ProcessInfo.processInfo.activeProcessorCount, 1)
 
+    // Weak cache to avoid repeated NSRunningApplication allocations
+    private var runningAppCache: [Int: WeakRef] = [:]
+
+    private final class WeakRef {
+        weak var app: NSRunningApplication?
+        var bundleIdentifier: String?
+        var localizedName: String?
+
+        init(app: NSRunningApplication?) {
+            self.app = app
+            self.bundleIdentifier = app?.bundleIdentifier
+            self.localizedName = app?.localizedName
+        }
+    }
+
     private struct RawProcess {
         let pid: Int
         let command: String
@@ -14,26 +29,32 @@ final class ProcessSnapshotProvider {
     }
 
     func snapshot() -> [ProcessStat] {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: shellPath)
-        process.arguments = ["-lc", psCommand]
+        autoreleasepool {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: shellPath)
+            process.arguments = ["-lc", psCommand]
 
-        let output = Pipe()
-        process.standardOutput = output
-        process.standardError = Pipe()
+            let output = Pipe()
+            process.standardOutput = output
+            process.standardError = Pipe()
 
-        do {
-            try process.run()
-        } catch {
-            return []
+            do {
+                try process.run()
+            } catch {
+                return []
+            }
+
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { return [] }
+
+            let data = output.fileHandleForReading.readDataToEndOfFile()
+            // Close pipes explicitly
+            process.standardOutput = nil
+            process.standardError = nil
+
+            guard let raw = String(data: data, encoding: .utf8) else { return [] }
+            return aggregate(parsePSOutput(raw))
         }
-
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else { return [] }
-
-        let data = output.fileHandleForReading.readDataToEndOfFile()
-        guard let raw = String(data: data, encoding: .utf8) else { return [] }
-        return aggregate(parsePSOutput(raw))
     }
 
     private func parsePSOutput(_ raw: String) -> [RawProcess] {
@@ -57,6 +78,26 @@ final class ProcessSnapshotProvider {
             }
     }
 
+    private func cachedAppInfo(for pid: Int) -> (bundleIdentifier: String?, localizedName: String?) {
+        if let cached = runningAppCache[pid], cached.app != nil {
+            return (cached.bundleIdentifier, cached.localizedName)
+        }
+        var resultBundleID: String?
+        var resultName: String?
+        autoreleasepool {
+            let app = NSRunningApplication(processIdentifier: pid_t(pid))
+            let info = WeakRef(app: app)
+            runningAppCache[pid] = info
+            resultBundleID = info.bundleIdentifier
+            resultName = info.localizedName
+            // Prune stale entries (keep cache bounded)
+            if runningAppCache.count > 500 {
+                runningAppCache = runningAppCache.filter { $0.value.app != nil }
+            }
+        }
+        return (resultBundleID, resultName)
+    }
+
     private func aggregate(_ rawProcesses: [RawProcess]) -> [ProcessStat] {
         struct Aggregate {
             var pid: Int
@@ -72,9 +113,8 @@ final class ProcessSnapshotProvider {
         var aggregates: [String: Aggregate] = [:]
 
         for raw in rawProcesses {
-            let runningApp = NSRunningApplication(processIdentifier: pid_t(raw.pid))
-            let bundleIdentifier = runningApp?.bundleIdentifier
-            let appName = runningApp?.localizedName ?? fallbackAppName(for: raw.command)
+            let (bundleIdentifier, localizedName) = cachedAppInfo(for: raw.pid)
+            let appName = localizedName ?? fallbackAppName(for: raw.command)
             let key = bundleIdentifier ?? appName
             let normalizedCPU = min(max(raw.rawCPUPercent / Double(processorCount), 0), 100)
             let child = ProcessChildStat(pid: raw.pid, command: raw.command, cpuPercent: normalizedCPU, memoryMB: raw.memoryMB)
