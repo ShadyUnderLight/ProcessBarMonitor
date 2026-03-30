@@ -126,7 +126,6 @@ final class MonitorViewModel: ObservableObject {
 
     func refresh(forceProcesses: Bool = false) async {
         guard !isRefreshing else { return }
-        statusMessage = nil
         isRefreshing = true
         defer { isRefreshing = false }
 
@@ -136,16 +135,30 @@ final class MonitorViewModel: ObservableObject {
             || Date().timeIntervalSince(lastProcessRefresh) >= processRefreshInterval
 
         async let summaryTask = metricsProvider.snapshot(temperatureMode: temperatureMode)
-        async let processTask: [ProcessStat]? = shouldRefreshProcesses ? processProvider.snapshot() : nil
+        async let processTask: Result<[ProcessStat], Error>? = shouldRefreshProcesses ? processSnapshotResult() : nil
 
         let snapshotSummary = await summaryTask
         summary = snapshotSummary
         appendHistory(cpu: snapshotSummary.cpuPercent, memory: snapshotSummary.memoryPressurePercent, temperature: snapshotSummary.cpuTemperatureC)
 
-        if let processes = await processTask {
-            allProcesses = processes
-            lastProcessRefresh = Date()
-            recomputeVisibleProcesses()
+        if let processResult = await processTask {
+            switch processResult {
+            case .success(let processes):
+                allProcesses = processes
+                lastProcessRefresh = Date()
+                recomputeVisibleProcesses()
+                statusMessage = nil
+            case .failure(let error):
+                statusMessage = "Failed to load top apps: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func processSnapshotResult() async -> Result<[ProcessStat], Error> {
+        do {
+            return .success(try await processProvider.snapshot())
+        } catch {
+            return .failure(error)
         }
     }
 
