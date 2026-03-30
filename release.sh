@@ -105,11 +105,11 @@ Packaged macOS release of $APP_NAME.
 ### Artifact
 - $ASSET_NAME
 - $(basename "$CHECKSUM_FILE")
-- SHA-256: \`$SHA\`
+- SHA-256: $SHA
 
 ### Notes
 - CPU temperature is best-effort and may fall back to thermal state when no supported helper tool is available.
-- This release ships as a macOS `.app` zipped artifact.
+- This release ships as a macOS .app zipped artifact.
 EOF
 
 if [[ "$TAG_EXISTS_LOCAL" -eq 0 ]]; then
