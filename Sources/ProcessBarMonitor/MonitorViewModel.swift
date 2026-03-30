@@ -65,14 +65,14 @@ final class MonitorViewModel: ObservableObject {
         processLimit = [5, 8, 12, 20].contains(savedProcessLimit) ? savedProcessLimit : 5
 
         if let rawTemperatureMode = settings.string(forKey: Keys.temperatureMode),
-           let parsedTemperatureMode = TemperatureMode(rawValue: rawTemperatureMode) {
+           let parsedTemperatureMode = TemperatureMode(savedValue: rawTemperatureMode) {
             temperatureMode = parsedTemperatureMode
         } else {
             temperatureMode = .hottestCPU
         }
 
         if let rawMenuBarDisplayMode = settings.string(forKey: Keys.menuBarDisplayMode),
-           let parsedMenuBarDisplayMode = MenuBarDisplayMode(rawValue: rawMenuBarDisplayMode) {
+           let parsedMenuBarDisplayMode = MenuBarDisplayMode(savedValue: rawMenuBarDisplayMode) {
             menuBarDisplayMode = parsedMenuBarDisplayMode
         } else {
             menuBarDisplayMode = .compact
@@ -86,11 +86,11 @@ final class MonitorViewModel: ObservableObject {
 
         switch menuBarDisplayMode {
         case .compact:
-            return "\(cpu)  \(memoryUsed)  \(temp)"
+            return L10n.format("menu_bar_title.compact", cpu, memoryUsed, temp)
         case .labeled:
-            return "CPU \(cpu)  RAM \(memoryUsed)  \(temp)"
+            return L10n.format("menu_bar_title.labeled", cpu, memoryUsed, temp)
         case .temperatureFirst:
-            return "\(temp)  \(cpu)  \(memoryUsed)"
+            return L10n.format("menu_bar_title.temperature_first", temp, cpu, memoryUsed)
         }
     }
 
@@ -149,7 +149,7 @@ final class MonitorViewModel: ObservableObject {
                 recomputeVisibleProcesses()
                 statusMessage = nil
             case .failure(let error):
-                statusMessage = "Failed to load top apps: \(error.localizedDescription)"
+                statusMessage = L10n.format("status.failed_to_load_top_apps", error.localizedDescription)
             }
         }
     }
@@ -194,7 +194,9 @@ final class MonitorViewModel: ObservableObject {
     func setLaunchAtLogin(_ enabled: Bool) {
         do {
             try launchAtLogin.setEnabled(enabled)
-            statusMessage = enabled ? "Launch at login enabled." : "Launch at login disabled."
+            statusMessage = enabled
+                ? L10n.string("status.launch_at_login_enabled")
+                : L10n.string("status.launch_at_login_disabled")
         } catch {
             statusMessage = error.localizedDescription
             launchAtLogin.refreshState()
@@ -207,11 +209,11 @@ final class MonitorViewModel: ObservableObject {
 
     func thermalText(_ state: ProcessInfo.ThermalState) -> String {
         switch state {
-        case .nominal: return "Nominal"
-        case .fair: return "Fair"
-        case .serious: return "Serious"
-        case .critical: return "Critical"
-        @unknown default: return "Unknown"
+        case .nominal: return L10n.string("thermal.nominal")
+        case .fair: return L10n.string("thermal.fair")
+        case .serious: return L10n.string("thermal.serious")
+        case .critical: return L10n.string("thermal.critical")
+        @unknown default: return L10n.string("thermal.unknown")
         }
     }
 }
