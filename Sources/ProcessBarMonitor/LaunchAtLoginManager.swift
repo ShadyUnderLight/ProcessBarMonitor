@@ -55,11 +55,11 @@ enum LaunchAtLoginError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unsupportedOS:
-            return "Launch at login requires macOS 13 or later."
+            return L10n.string("error.launch_at_login.unsupported")
         case .requiresApproval:
-            return "macOS accepted the login item request, but it may still need approval in System Settings → General → Login Items."
+            return L10n.string("error.launch_at_login.requires_approval")
         case .serviceFailure(let underlying):
-            return "Could not update the login item: \(underlying)"
+            return L10n.format("error.launch_at_login.service_failure", underlying)
         }
     }
 }
