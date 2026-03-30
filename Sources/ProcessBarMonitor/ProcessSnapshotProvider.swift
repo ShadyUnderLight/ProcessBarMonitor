@@ -2,8 +2,32 @@ import Foundation
 import AppKit
 
 actor ProcessSnapshotProvider {
-    private let shellPath = "/bin/zsh"
-    private let psCommand = "/bin/ps -axo pid=,comm=,%cpu=,rss="
+    enum SnapshotError: LocalizedError {
+        case launchFailed(Error)
+        case commandFailed(status: Int32, stderr: String)
+        case invalidOutputEncoding
+        case noProcessesParsed(lineCount: Int)
+
+        var errorDescription: String? {
+            switch self {
+            case .launchFailed(let error):
+                return "Unable to start ps: \(error.localizedDescription)"
+            case .commandFailed(let status, let stderr):
+                let trimmed = stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.isEmpty {
+                    return "ps exited with status \(status)."
+                }
+                return "ps exited with status \(status): \(trimmed)"
+            case .invalidOutputEncoding:
+                return "ps output was not valid UTF-8."
+            case .noProcessesParsed(let lineCount):
+                return "ps returned \(lineCount) lines, but none could be parsed."
+            }
+        }
+    }
+
+    private let psPath = "/bin/ps"
+    private let psArguments = ["-axo", "pid=,comm=,%cpu=,rss="]
     private let metadataRefreshInterval: TimeInterval = 30
     private let maxMetadataLookupsPerSnapshot = 48
 
@@ -27,27 +51,38 @@ actor ProcessSnapshotProvider {
 
     private var metadataCache: [Int: CachedMetadata] = [:]
 
-    func snapshot() -> [ProcessStat] {
+    func snapshot() throws -> [ProcessStat] {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: shellPath)
-        process.arguments = ["-lc", psCommand]
+        process.executableURL = URL(fileURLWithPath: psPath)
+        process.arguments = psArguments
 
         let output = Pipe()
+        let errorOutput = Pipe()
         process.standardOutput = output
-        process.standardError = Pipe()
+        process.standardError = errorOutput
 
         do {
             try process.run()
         } catch {
-            return []
+            throw SnapshotError.launchFailed(error)
         }
 
         process.waitUntilExit()
-        guard process.terminationStatus == 0 else { return [] }
+        let stderrData = errorOutput.fileHandleForReading.readDataToEndOfFile()
+        let stderr = String(data: stderrData, encoding: .utf8) ?? ""
+        guard process.terminationStatus == 0 else {
+            throw SnapshotError.commandFailed(status: process.terminationStatus, stderr: stderr)
+        }
 
         let data = output.fileHandleForReading.readDataToEndOfFile()
-        guard let raw = String(data: data, encoding: .utf8) else { return [] }
+        guard let raw = String(data: data, encoding: .utf8) else {
+            throw SnapshotError.invalidOutputEncoding
+        }
         let rawProcesses = parsePSOutput(raw)
+        if rawProcesses.isEmpty {
+            let lineCount = raw.split(whereSeparator: { $0.isNewline }).count
+            throw SnapshotError.noProcessesParsed(lineCount: lineCount)
+        }
         let prioritizedPIDs = prioritizedMetadataPIDs(from: rawProcesses)
         refreshMetadataCache(for: rawProcesses, prioritizedPIDs: prioritizedPIDs)
         pruneMetadataCache(validPIDs: Set(rawProcesses.map(\.pid)))
