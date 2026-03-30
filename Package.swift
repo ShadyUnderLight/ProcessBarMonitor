@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ProcessBarMonitor",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v13)
     ],
@@ -18,7 +19,10 @@ let package = Package(
         .executableTarget(
             name: "ProcessBarMonitor",
             dependencies: ["CSensors"],
-            path: "Sources/ProcessBarMonitor"
+            path: "Sources/ProcessBarMonitor",
+            resources: [
+                .process("Resources")
+            ]
         )
     ]
 )

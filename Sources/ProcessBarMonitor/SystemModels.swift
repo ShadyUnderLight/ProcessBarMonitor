@@ -1,19 +1,77 @@
 import Foundation
 
 enum TemperatureMode: String, CaseIterable, Identifiable {
-    case hottestCPU = "Hottest CPU"
-    case averageCPU = "Average CPU"
-    case hottestSoC = "Hottest SoC"
+    case hottestCPU
+    case averageCPU
+    case hottestSoC
 
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .hottestCPU:
+            return L10n.string("temp_mode.hottest_cpu")
+        case .averageCPU:
+            return L10n.string("temp_mode.average_cpu")
+        case .hottestSoC:
+            return L10n.string("temp_mode.hottest_soc")
+        }
+    }
+
+    init?(savedValue: String) {
+        if let mode = TemperatureMode(rawValue: savedValue) {
+            self = mode
+            return
+        }
+
+        switch savedValue {
+        case "Hottest CPU":
+            self = .hottestCPU
+        case "Average CPU":
+            self = .averageCPU
+        case "Hottest SoC":
+            self = .hottestSoC
+        default:
+            return nil
+        }
+    }
 }
 
 enum MenuBarDisplayMode: String, CaseIterable, Identifiable {
-    case compact = "Compact"
-    case labeled = "Labeled"
-    case temperatureFirst = "Temperature First"
+    case compact
+    case labeled
+    case temperatureFirst
 
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .compact:
+            return L10n.string("menu_display.compact")
+        case .labeled:
+            return L10n.string("menu_display.labeled")
+        case .temperatureFirst:
+            return L10n.string("menu_display.temperature_first")
+        }
+    }
+
+    init?(savedValue: String) {
+        if let mode = MenuBarDisplayMode(rawValue: savedValue) {
+            self = mode
+            return
+        }
+
+        switch savedValue {
+        case "Compact":
+            self = .compact
+        case "Labeled":
+            self = .labeled
+        case "Temperature First":
+            self = .temperatureFirst
+        default:
+            return nil
+        }
+    }
 }
 
 struct ProcessChildStat: Identifiable, Hashable {
@@ -54,7 +112,9 @@ struct ProcessStat: Identifiable, Hashable {
     }
 
     var pidSummary: String {
-        processCount > 1 ? "\(processCount) procs" : "pid \(pid)"
+        processCount > 1
+            ? L10n.format("process.count_procs", processCount)
+            : L10n.format("process.pid", pid)
     }
 }
 

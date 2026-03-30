@@ -117,14 +117,14 @@ actor SystemMetricsProvider {
 
     private func architectureAndTemperatureNote(temperatureAvailable: Bool, mode: TemperatureMode) -> String {
         if temperatureAvailable {
-            return "Temperature mode: \(mode.rawValue). Source: Apple Silicon HID sensors first, helper fallback second."
+            return L10n.format("note.temperature.available", mode.title)
         }
         #if arch(arm64)
-        return "Apple Silicon HID sensors were checked for \(mode.rawValue), but no valid value was exposed right now."
+        return L10n.format("note.temperature.arm64_unavailable", mode.title)
         #elseif arch(x86_64)
-        return "Intel: install osx-cpu-temp or istats to show a real CPU temperature."
+        return L10n.string("note.temperature.intel_hint")
         #else
-        return "No valid CPU temperature source found."
+        return L10n.string("note.temperature.no_source")
         #endif
     }
 }
