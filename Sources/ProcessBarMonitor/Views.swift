@@ -87,7 +87,7 @@ struct ProcessRowView: View {
                                 .font(.system(size: 11, design: .rounded))
                                 .lineLimit(1)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                            Text("pid \(child.pid)")
+                            Text(L10n.format("process.pid", child.pid))
                                 .font(.system(size: 10, design: .monospaced))
                                 .foregroundStyle(.secondary)
                                 .frame(width: 72, alignment: .leading)
@@ -101,7 +101,7 @@ struct ProcessRowView: View {
                     }
 
                     if process.childProcesses.count > 8 {
-                        Text("+ \(process.childProcesses.count - 8) more processes")
+                        Text(L10n.format("process.more_count", process.childProcesses.count - 8))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -143,7 +143,7 @@ struct MenuBarContentView: View {
     }
 
     private var memoryCompact: String {
-        String(format: "%.0f%% used", viewModel.summary.memoryPressurePercent)
+        L10n.format("metric.used_percent", viewModel.summary.memoryPressurePercent)
     }
 
     private var currentTemperatureColor: Color {
@@ -155,17 +155,17 @@ struct MenuBarContentView: View {
 
     private var healthLine: String {
         let temp = viewModel.summary.cpuTemperatureC.map { String(format: "%.1f°C", $0) } ?? "--"
-        return "CPU \(String(format: "%.0f%%", viewModel.summary.cpuPercent)) · RAM \(memoryCompact) · Temp \(temp)"
+        return L10n.format("health.line", String(format: "%.0f%%", viewModel.summary.cpuPercent), memoryCompact, temp)
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 8) {
-                    SummaryCardView(title: "CPU", value: String(format: "%.1f %%", viewModel.summary.cpuPercent), accent: .primary)
-                    SummaryCardView(title: "RAM", value: memorySummary, accent: .blue)
-                    SummaryCardView(title: "Temp", value: viewModel.summary.cpuTemperatureC.map { String(format: "%.1f °C", $0) } ?? "--", accent: currentTemperatureColor)
-                    SummaryCardView(title: "Thermal", value: viewModel.thermalText(viewModel.summary.thermalState), accent: .pink)
+                    SummaryCardView(title: L10n.string("summary.cpu"), value: String(format: "%.1f %%", viewModel.summary.cpuPercent), accent: .primary)
+                    SummaryCardView(title: L10n.string("summary.ram"), value: memorySummary, accent: .blue)
+                    SummaryCardView(title: L10n.string("summary.temp"), value: viewModel.summary.cpuTemperatureC.map { String(format: "%.1f °C", $0) } ?? "--", accent: currentTemperatureColor)
+                    SummaryCardView(title: L10n.string("summary.thermal"), value: viewModel.thermalText(viewModel.summary.thermalState), accent: .pink)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -179,7 +179,7 @@ struct MenuBarContentView: View {
 
                 HStack(spacing: 8) {
                     SparklineView(
-                        title: "CPU Trend",
+                        title: L10n.string("trend.cpu"),
                         points: viewModel.cpuHistory,
                         color: .primary,
                         valueText: String(format: "%.1f%%", viewModel.summary.cpuPercent),
@@ -188,7 +188,7 @@ struct MenuBarContentView: View {
                         criticalThreshold: 85
                     )
                     SparklineView(
-                        title: "RAM Trend",
+                        title: L10n.string("trend.ram"),
                         points: viewModel.memoryHistory,
                         color: .blue,
                         valueText: String(format: "%.0f%%", viewModel.summary.memoryPressurePercent),
@@ -197,7 +197,7 @@ struct MenuBarContentView: View {
                         criticalThreshold: 90
                     )
                     SparklineView(
-                        title: "Temp Trend",
+                        title: L10n.string("trend.temp"),
                         points: viewModel.temperatureHistory,
                         color: .green,
                         valueText: viewModel.summary.cpuTemperatureC.map { String(format: "%.1f°C", $0) } ?? "--",
@@ -210,32 +210,32 @@ struct MenuBarContentView: View {
                 Divider()
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Filter & Display")
+                    Text(L10n.string("section.filter_display"))
                         .font(.headline)
 
-                    Picker("Menu Bar", selection: $viewModel.menuBarDisplayMode) {
+                    Picker(L10n.string("picker.menu_bar"), selection: $viewModel.menuBarDisplayMode) {
                         ForEach(MenuBarDisplayMode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
+                            Text(mode.title).tag(mode)
                         }
                     }
                     .pickerStyle(.segmented)
 
-                    Picker("Temperature", selection: $viewModel.temperatureMode) {
+                    Picker(L10n.string("picker.temperature"), selection: $viewModel.temperatureMode) {
                         ForEach(TemperatureMode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
+                            Text(mode.title).tag(mode)
                         }
                     }
                     .onChange(of: viewModel.temperatureMode) { _ in
                         Task { await viewModel.refresh(forceProcesses: true) }
                     }
 
-                    TextField("Search app name / path / pid / bundle id", text: $viewModel.searchText)
+                    TextField(L10n.string("search.placeholder"), text: $viewModel.searchText)
                         .textFieldStyle(.roundedBorder)
                         .onChange(of: viewModel.searchText) { _ in
                             viewModel.recomputeVisibleProcesses()
                         }
 
-                    Picker("Rows", selection: $viewModel.processLimit) {
+                    Picker(L10n.string("picker.rows"), selection: $viewModel.processLimit) {
                         Text("5").tag(5)
                         Text("8").tag(8)
                         Text("12").tag(12)
@@ -247,7 +247,7 @@ struct MenuBarContentView: View {
                     }
                 }
 
-                Toggle("Launch at login", isOn: Binding(
+                Toggle(L10n.string("toggle.launch_at_login"), isOn: Binding(
                     get: { viewModel.launchAtLogin.isEnabled },
                     set: { newValue in
                         viewModel.setLaunchAtLogin(newValue)
@@ -267,9 +267,9 @@ struct MenuBarContentView: View {
                 Divider()
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Top Apps by CPU")
+                    Text(L10n.string("section.top_apps_cpu"))
                         .font(.headline)
-                    Text("Click an app to inspect grouped child processes. CPU uses raw per-process percentages, so totals can exceed 100% on multicore Macs.")
+                    Text(L10n.string("section.top_apps_cpu_desc"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     processHeader
@@ -288,9 +288,9 @@ struct MenuBarContentView: View {
                 Divider()
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Top Apps by Memory")
+                    Text(L10n.string("section.top_apps_memory"))
                         .font(.headline)
-                    Text("Click an app to inspect grouped child processes.")
+                    Text(L10n.string("section.top_apps_memory_desc"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     processHeader
@@ -310,17 +310,17 @@ struct MenuBarContentView: View {
 
                 HStack {
                     Button(action: { Task { await viewModel.refresh(forceProcesses: true) } }) {
-                        Text(viewModel.isRefreshing ? "Refreshing..." : "Refresh Now")
+                        Text(viewModel.isRefreshing ? L10n.string("button.refreshing") : L10n.string("button.refresh_now"))
                     }
                     .disabled(viewModel.isRefreshing)
 
-                    Button("Quit") {
+                    Button(L10n.string("button.quit")) {
                         quitApplication()
                     }
 
                     Spacer()
 
-                    Text("Updated \(viewModel.summary.updatedAt.formatted(date: .omitted, time: .standard))")
+                    Text(L10n.format("label.updated_at", viewModel.summary.updatedAt.formatted(date: .omitted, time: .standard)))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -338,19 +338,19 @@ struct MenuBarContentView: View {
 
     private var processHeader: some View {
         HStack(spacing: 8) {
-            Text("App")
+            Text(L10n.string("header.app"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Text("Group")
+            Text(L10n.string("header.group"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(width: 72, alignment: .leading)
-            Text("CPU")
+            Text(L10n.string("header.cpu"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(width: 56, alignment: .trailing)
-            Text("Memory")
+            Text(L10n.string("header.memory"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(width: 66, alignment: .trailing)

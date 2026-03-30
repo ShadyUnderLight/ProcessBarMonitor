@@ -11,17 +11,17 @@ actor ProcessSnapshotProvider {
         var errorDescription: String? {
             switch self {
             case .launchFailed(let error):
-                return "Unable to start ps: \(error.localizedDescription)"
+                return L10n.format("error.ps.launch_failed", error.localizedDescription)
             case .commandFailed(let status, let stderr):
                 let trimmed = stderr.trimmingCharacters(in: .whitespacesAndNewlines)
                 if trimmed.isEmpty {
-                    return "ps exited with status \(status)."
+                    return L10n.format("error.ps.command_failed_no_stderr", status)
                 }
-                return "ps exited with status \(status): \(trimmed)"
+                return L10n.format("error.ps.command_failed", status, trimmed)
             case .invalidOutputEncoding:
-                return "ps output was not valid UTF-8."
+                return L10n.string("error.ps.invalid_utf8")
             case .noProcessesParsed(let lineCount):
-                return "ps returned \(lineCount) lines, but none could be parsed."
+                return L10n.format("error.ps.no_processes_parsed", lineCount)
             }
         }
     }
