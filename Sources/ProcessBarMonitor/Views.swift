@@ -314,6 +314,10 @@ struct MenuBarContentView: View {
                     }
                     .disabled(viewModel.isRefreshing)
 
+                    Button(L10n.string("button.copy_diagnostics")) {
+                        viewModel.copyDiagnosticsToPasteboard()
+                    }
+
                     Button(L10n.string("button.quit")) {
                         quitApplication()
                     }

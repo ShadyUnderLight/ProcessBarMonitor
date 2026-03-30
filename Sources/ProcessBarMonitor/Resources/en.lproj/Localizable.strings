@@ -57,3 +57,6 @@
 "note.temperature.arm64_unavailable" = "Apple Silicon HID sensors were checked for %@, but no valid value was exposed right now.";
 "note.temperature.intel_hint" = "Intel: install osx-cpu-temp or istats to show a real CPU temperature.";
 "note.temperature.no_source" = "No valid CPU temperature source found.";
+"button.copy_diagnostics" = "Copy Diagnostics";
+"status.diagnostics_copied" = "Diagnostics copied to clipboard.";
+"status.diagnostics_copy_failed" = "Failed to copy diagnostics.";
