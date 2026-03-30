@@ -1,5 +1,7 @@
 import Foundation
 import Combine
+import AppKit
+import OSLog
 
 private struct SettingsStore {
     let defaults: UserDefaults
@@ -33,6 +35,7 @@ final class MonitorViewModel: ObservableObject {
     @Published private(set) var temperatureHistory: [MetricPoint] = []
     @Published private(set) var isMenuExpanded = false
     @Published var statusMessage: String?
+    @Published private(set) var processDiagnostics = ProcessSnapshotDiagnostics()
 
     @Published var searchText = ""
     @Published var processLimit: Int {
@@ -48,8 +51,11 @@ final class MonitorViewModel: ObservableObject {
     private let metricsProvider = SystemMetricsProvider()
     private let processProvider = ProcessSnapshotProvider()
     private let settings: SettingsStore
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ai.openclaw.ProcessBarMonitor", category: "process-snapshot")
     private var refreshTask: Task<Void, Never>?
     private var lastProcessRefresh = Date.distantPast
+    private var lastLoggedFailureSignature: String?
+    private var lastLoggedFailureAt = Date.distantPast
 
     private enum Keys {
         static let processLimit = "processLimit"
@@ -142,13 +148,23 @@ final class MonitorViewModel: ObservableObject {
         appendHistory(cpu: snapshotSummary.cpuPercent, memory: snapshotSummary.memoryPressurePercent, temperature: snapshotSummary.cpuTemperatureC)
 
         if let processResult = await processTask {
+            processDiagnostics.markAttempt()
             switch processResult {
             case .success(let processes):
                 allProcesses = processes
                 lastProcessRefresh = Date()
                 recomputeVisibleProcesses()
+                processDiagnostics.markSuccess(
+                    processCount: processes.count,
+                    topCPUCount: topCPUProcesses.count,
+                    topMemoryCount: topMemoryProcesses.count
+                )
                 statusMessage = nil
             case .failure(let error):
+                let message = error.localizedDescription
+                let details = String(describing: error)
+                processDiagnostics.markFailure(message: message, details: details)
+                logProcessSnapshotFailureIfNeeded(message: message, details: details)
                 statusMessage = L10n.format("status.failed_to_load_top_apps", error.localizedDescription)
             }
         }
@@ -207,6 +223,17 @@ final class MonitorViewModel: ObservableObject {
         statusMessage = nil
     }
 
+    func copyDiagnosticsToPasteboard() {
+        let report = diagnosticsReport()
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        if pasteboard.setString(report, forType: .string) {
+            statusMessage = L10n.string("status.diagnostics_copied")
+        } else {
+            statusMessage = L10n.string("status.diagnostics_copy_failed")
+        }
+    }
+
     func thermalText(_ state: ProcessInfo.ThermalState) -> String {
         switch state {
         case .nominal: return L10n.string("thermal.nominal")
@@ -215,5 +242,56 @@ final class MonitorViewModel: ObservableObject {
         case .critical: return L10n.string("thermal.critical")
         @unknown default: return L10n.string("thermal.unknown")
         }
+    }
+
+    private func logProcessSnapshotFailureIfNeeded(message: String, details: String) {
+        let signature = "\(message)|\(details)"
+        let now = Date()
+        let minInterval: TimeInterval = 60
+
+        if signature == lastLoggedFailureSignature, now.timeIntervalSince(lastLoggedFailureAt) < minInterval {
+            return
+        }
+
+        lastLoggedFailureSignature = signature
+        lastLoggedFailureAt = now
+        logger.error("Process snapshot failed. attempts=\(self.processDiagnostics.attemptCount, privacy: .public) failures=\(self.processDiagnostics.failureCount, privacy: .public) message=\(message, privacy: .public) details=\(details, privacy: .public)")
+    }
+
+    private func diagnosticsReport() -> String {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let appVersion = (info["CFBundleShortVersionString"] as? String) ?? "unknown"
+        let appBuild = (info["CFBundleVersion"] as? String) ?? "unknown"
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let now = iso.string(from: Date())
+
+        func format(_ date: Date?) -> String {
+            guard let date else { return "n/a" }
+            return iso.string(from: date)
+        }
+
+        return """
+        ProcessBarMonitor Diagnostics
+        generated_at: \(now)
+        app_version: \(appVersion)
+        app_build: \(appBuild)
+        os: \(osVersion)
+        process_snapshot_attempts: \(processDiagnostics.attemptCount)
+        process_snapshot_successes: \(processDiagnostics.successCount)
+        process_snapshot_failures: \(processDiagnostics.failureCount)
+        process_snapshot_last_attempt: \(format(processDiagnostics.lastAttemptAt))
+        process_snapshot_last_success: \(format(processDiagnostics.lastSuccessAt))
+        process_snapshot_last_failure: \(format(processDiagnostics.lastFailureAt))
+        process_snapshot_last_process_count: \(processDiagnostics.lastSnapshotProcessCount)
+        top_cpu_rows: \(processDiagnostics.lastTopCPUCount)
+        top_memory_rows: \(processDiagnostics.lastTopMemoryCount)
+        process_snapshot_last_error: \(processDiagnostics.lastFailureMessage ?? "n/a")
+        process_snapshot_last_error_detail: \(processDiagnostics.lastFailureDetails ?? "n/a")
+        status_message: \(statusMessage ?? "n/a")
+        menu_expanded: \(isMenuExpanded)
+        search_text: \(searchText)
+        """
     }
 }

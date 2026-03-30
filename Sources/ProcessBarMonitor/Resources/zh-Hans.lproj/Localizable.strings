@@ -57,3 +57,6 @@
 "note.temperature.arm64_unavailable" = "已检查 %@ 的 Apple Silicon HID 传感器，但当前未返回有效值。";
 "note.temperature.intel_hint" = "Intel 机型：安装 osx-cpu-temp 或 istats 以显示真实 CPU 温度。";
 "note.temperature.no_source" = "未找到有效的 CPU 温度来源。";
+"button.copy_diagnostics" = "复制诊断信息";
+"status.diagnostics_copied" = "诊断信息已复制到剪贴板。";
+"status.diagnostics_copy_failed" = "复制诊断信息失败。";
