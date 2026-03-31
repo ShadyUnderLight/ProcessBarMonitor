@@ -6,7 +6,7 @@ TARGET_DIR="$HOME/Applications"
 
 pkill -f '/Users/mn/Applications/ProcessBarMonitor.app/Contents/MacOS/ProcessBarMonitor' || true
 pkill -f '/Users/mn/.openclaw/workspace/ProcessBarMonitor/.build/.*/ProcessBarMonitor' || true
-"$ROOT/build_app.sh"
+"$ROOT/build_app.sh" "$@"
 mkdir -p "$TARGET_DIR"
 rm -rf "$TARGET_DIR/$APP_NAME"
 cp -R "$ROOT/dist/$APP_NAME" "$TARGET_DIR/$APP_NAME"
