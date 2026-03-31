@@ -135,10 +135,10 @@ final class MonitorViewModel: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
 
+        let processIntervalElapsed = Date().timeIntervalSince(lastProcessRefresh) >= processRefreshInterval
         let shouldRefreshProcesses = forceProcesses
-            || isMenuExpanded
             || allProcesses.isEmpty
-            || Date().timeIntervalSince(lastProcessRefresh) >= processRefreshInterval
+            || (isMenuExpanded && processIntervalElapsed)
 
         async let summaryTask = metricsProvider.snapshot(temperatureMode: temperatureMode)
         async let processTask: Result<[ProcessStat], Error>? = shouldRefreshProcesses ? processSnapshotResult() : nil
