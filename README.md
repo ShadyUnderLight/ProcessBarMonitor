@@ -2,18 +2,27 @@
 
 [中文说明 / 中文 README](README.zh-CN.md)
 
-A native macOS menu bar app for watching CPU, memory, thermal state, and top processes at a glance.
+A native macOS menu bar monitor for CPU, memory, thermal state, and top apps.
 
-## What it does
-- Shows a compact live summary in the macOS menu bar
-- Displays overall CPU usage, memory usage, and thermal state
-- Lists top apps by CPU and by memory
-- Supports manual refresh, search, and adjustable row count
-- Remembers display preferences across launches
-- Includes launch-at-login support via macOS login items
+## Download
+- [Latest release](https://github.com/ShadyUnderLight/ProcessBarMonitor/releases/latest)
 
-## Current status
-This is an early but usable MVP.
+## Why this app
+ProcessBarMonitor gives you a compact Activity Monitor-style summary without keeping a full window open. It lives in the macOS menu bar and focuses on the system signals you usually want at a glance: CPU load, memory pressure, thermal state, and which apps are currently eating resources.
+
+## Highlights
+- Live menu bar summary for CPU, memory, and thermal state
+- Top apps by CPU and memory in one click
+- Search and adjustable process row count
+- Launch at login support
+- Best-effort CPU temperature integration when helper tools are available
+- Native Swift / SwiftUI macOS app
+
+## Good fit for
+- keeping an eye on system load while working
+- quickly spotting which app just spiked CPU or memory
+- checking thermal state on laptops without opening Activity Monitor
+- lightweight menu bar monitoring on Apple silicon Macs
 
 ## Features
 - Menu bar utility with live summary in the menu bar title
