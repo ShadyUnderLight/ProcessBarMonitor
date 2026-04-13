@@ -1,6 +1,11 @@
 .DS_Store
 /.build
 /Packages
+/build
+/dist
+/release/*.zip
+/release/*SHA256SUMS.txt
+/release/release-notes-v*.md
 xcuserdata/
 DerivedData/
 .swiftpm/configuration/registries.json

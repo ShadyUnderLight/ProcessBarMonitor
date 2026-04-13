@@ -4,11 +4,13 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 APP_NAME="ProcessBarMonitor.app"
 TARGET_DIR="$HOME/Applications"
 
-pkill -f '/Users/mn/Applications/ProcessBarMonitor.app/Contents/MacOS/ProcessBarMonitor' || true
-pkill -f '/Users/mn/.openclaw/workspace/ProcessBarMonitor/.build/.*/ProcessBarMonitor' || true
+TARGET_APP="$TARGET_DIR/$APP_NAME"
+
+pkill -f "$TARGET_APP/Contents/MacOS/ProcessBarMonitor" || true
+pkill -f "$ROOT/.build/.*/ProcessBarMonitor" || true
 "$ROOT/build_app.sh" "$@"
 mkdir -p "$TARGET_DIR"
-rm -rf "$TARGET_DIR/$APP_NAME"
-cp -R "$ROOT/dist/$APP_NAME" "$TARGET_DIR/$APP_NAME"
-echo "Installed to $TARGET_DIR/$APP_NAME"
-open "$TARGET_DIR/$APP_NAME"
+rm -rf "$TARGET_APP"
+cp -R "$ROOT/dist/$APP_NAME" "$TARGET_APP"
+echo "Installed to $TARGET_APP"
+open "$TARGET_APP"
