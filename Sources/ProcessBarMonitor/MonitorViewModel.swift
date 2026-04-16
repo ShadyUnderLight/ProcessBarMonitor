@@ -108,6 +108,17 @@ final class MonitorViewModel: ObservableObject {
 
     func start() {
         guard refreshTask == nil else { return }
+
+        let legacyCleanup = LegacyLaunchAgentCleaner.cleanupIfNeeded()
+        if let messageKey = legacyCleanup.messageKey {
+            if let details = legacyCleanup.details {
+                statusMessage = L10n.format(messageKey, details)
+            } else {
+                statusMessage = L10n.string(messageKey)
+            }
+        }
+        launchAtLogin.refreshState()
+
         refreshTask = Task { [weak self] in
             await self?.refresh(forceProcesses: true)
             while !Task.isCancelled {
