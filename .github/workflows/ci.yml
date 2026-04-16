@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches: [main]
@@ -12,7 +15,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Show toolchain versions
         run: |
@@ -35,7 +38,7 @@ jobs:
           shasum -a 256 release/ProcessBarMonitor-ci-macOS.zip > release/ProcessBarMonitor-ci-SHA256SUMS.txt
 
       - name: Upload app artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ProcessBarMonitor-macOS
           path: |
