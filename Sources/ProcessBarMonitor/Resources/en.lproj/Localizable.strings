@@ -31,6 +31,8 @@
 "status.failed_to_load_top_apps" = "Failed to load top apps: %@";
 "status.launch_at_login_enabled" = "Launch at login enabled.";
 "status.launch_at_login_disabled" = "Launch at login disabled.";
+"status.legacy_launch_agent_removed" = "Removed a leftover legacy login LaunchAgent so the app will no longer start twice.";
+"status.legacy_launch_agent_remove_failed" = "Found a leftover legacy login LaunchAgent but could not remove it automatically: %@";
 "thermal.nominal" = "Nominal";
 "thermal.fair" = "Fair";
 "thermal.serious" = "Serious";

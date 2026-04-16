@@ -31,6 +31,8 @@
 "status.failed_to_load_top_apps" = "加载 Top Apps 失败：%@";
 "status.launch_at_login_enabled" = "已启用开机启动。";
 "status.launch_at_login_disabled" = "已关闭开机启动。";
+"status.legacy_launch_agent_removed" = "已清理遗留的旧版开机启动项，应用之后不会再因此重复启动。";
+"status.legacy_launch_agent_remove_failed" = "发现遗留的旧版开机启动项，但自动清理失败：%@";
 "thermal.nominal" = "正常";
 "thermal.fair" = "一般";
 "thermal.serious" = "较高";
