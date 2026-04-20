@@ -6,12 +6,16 @@ enum L10n {
         Set(Bundle.module.localizations.map { $0.lowercased() })
     }()
 
+    // Cached once — Locale.preferredLanguages is stable for the process lifetime.
+    private static let cachedPreferredLanguages: [String] = {
+        Locale.preferredLanguages.map { $0.lowercased() }
+    }()
+
     private static let bundle: Bundle = {
         let moduleBundle = Bundle.module
 
-        for preferred in Locale.preferredLanguages.map({ $0.lowercased() }) {
-            let candidates = localizationCandidates(for: preferred)
-            for candidate in candidates where cachedAvailableLocalizations.contains(candidate) {
+        for preferred in cachedPreferredLanguages {
+            for candidate in localizationCandidates(for: preferred) where cachedAvailableLocalizations.contains(candidate) {
                 if let path = moduleBundle.path(forResource: candidate, ofType: "lproj"),
                    let localizedBundle = Bundle(path: path) {
                     return localizedBundle
@@ -30,13 +34,11 @@ enum L10n {
         String(format: string(key), locale: Locale.current, arguments: arguments)
     }
 
-    // Candidates are derived from language tags which are stable for the process lifetime.
     private static func localizationCandidates(for language: String) -> [String] {
         let parts = language.split(separator: "-").map(String.init)
         guard !parts.isEmpty else { return [language] }
 
-        var candidates: [String] = []
-        candidates.append(language)
+        var candidates: [String] = [language]
 
         if parts.count >= 2 {
             candidates.append(parts[0] + "-" + parts[1])
