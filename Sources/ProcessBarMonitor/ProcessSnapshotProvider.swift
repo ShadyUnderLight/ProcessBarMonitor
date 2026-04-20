@@ -2,6 +2,8 @@ import Foundation
 import AppKit
 
 actor ProcessSnapshotProvider {
+    static let shared = ProcessSnapshotProvider()
+
     enum SnapshotError: LocalizedError {
         case launchFailed(Error)
         case commandFailed(status: Int32, stderr: String)
