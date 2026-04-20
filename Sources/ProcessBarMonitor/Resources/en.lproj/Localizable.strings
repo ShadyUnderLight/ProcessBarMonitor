@@ -62,3 +62,5 @@
 "button.copy_diagnostics" = "Copy Diagnostics";
 "status.diagnostics_copied" = "Diagnostics copied to clipboard.";
 "status.diagnostics_copy_failed" = "Failed to copy diagnostics.";
+"settings.section.display" = "Display";
+"settings.section.startup" = "Startup";
