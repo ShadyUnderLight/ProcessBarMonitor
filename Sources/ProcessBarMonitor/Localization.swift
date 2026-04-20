@@ -1,13 +1,17 @@
 import Foundation
 
 enum L10n {
+    // Cached once at enum initialization — Localization doesn't change at runtime.
+    private static let cachedAvailableLocalizations: Set<String> = {
+        Set(Bundle.module.localizations.map { $0.lowercased() })
+    }()
+
     private static let bundle: Bundle = {
         let moduleBundle = Bundle.module
-        let available = Set(moduleBundle.localizations.map { $0.lowercased() })
 
         for preferred in Locale.preferredLanguages.map({ $0.lowercased() }) {
             let candidates = localizationCandidates(for: preferred)
-            for candidate in candidates where available.contains(candidate) {
+            for candidate in candidates where cachedAvailableLocalizations.contains(candidate) {
                 if let path = moduleBundle.path(forResource: candidate, ofType: "lproj"),
                    let localizedBundle = Bundle(path: path) {
                     return localizedBundle
@@ -26,6 +30,7 @@ enum L10n {
         String(format: string(key), locale: Locale.current, arguments: arguments)
     }
 
+    // Candidates are derived from language tags which are stable for the process lifetime.
     private static func localizationCandidates(for language: String) -> [String] {
         let parts = language.split(separator: "-").map(String.init)
         guard !parts.isEmpty else { return [language] }
