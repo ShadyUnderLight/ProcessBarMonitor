@@ -49,7 +49,7 @@ final class MonitorViewModel: ObservableObject {
     }
 
     private let metricsProvider = SystemMetricsProvider()
-    private let processProvider = ProcessSnapshotProvider()
+    private let processProvider = ProcessSnapshotProvider.shared
     private let settings: SettingsStore
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ai.openclaw.ProcessBarMonitor", category: "process-snapshot")
     private var refreshTask: Task<Void, Never>?
