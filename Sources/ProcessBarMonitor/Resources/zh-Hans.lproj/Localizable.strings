@@ -1,5 +1,5 @@
 "summary.cpu" = "CPU";
-"summary.ram" = "内存";
+"summary.ram" = "内存 (系统级)";
 "summary.temp" = "温度";
 "summary.thermal" = "热状态";
 "metric.used_percent" = "已用 %.0f%%";

@@ -137,7 +137,7 @@ struct MenuBarContentView: View {
     }
 
     private var memorySummary: String {
-        let used = ByteCountFormatter.string(fromByteCount: Int64(viewModel.summary.memoryUsedBytes), countStyle: .memory)
+        let used = ByteCountFormatter.string(fromByteCount: Int64(viewModel.summary.systemMemoryUsedBytes), countStyle: .memory)
         let total = ByteCountFormatter.string(fromByteCount: Int64(viewModel.summary.memoryTotalBytes), countStyle: .memory)
         return "\(used) / \(total)"
     }

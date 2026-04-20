@@ -87,7 +87,7 @@ final class MonitorViewModel: ObservableObject {
 
     var menuBarTitle: String {
         let cpu = String(format: "%.0f%%", summary.cpuPercent)
-        let memoryUsed = shortMemoryString(bytes: summary.memoryUsedBytes)
+        let memoryUsed = shortMemoryString(bytes: summary.systemMemoryUsedBytes)
         let temp = summary.cpuTemperatureC.map { String(format: "%.0f°", $0) } ?? "--°"
 
         switch menuBarDisplayMode {
