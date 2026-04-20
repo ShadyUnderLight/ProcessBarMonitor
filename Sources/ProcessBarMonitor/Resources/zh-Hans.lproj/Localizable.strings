@@ -62,3 +62,5 @@
 "button.copy_diagnostics" = "复制诊断信息";
 "status.diagnostics_copied" = "诊断信息已复制到剪贴板。";
 "status.diagnostics_copy_failed" = "复制诊断信息失败。";
+"settings.section.display" = "显示";
+"settings.section.startup" = "启动";

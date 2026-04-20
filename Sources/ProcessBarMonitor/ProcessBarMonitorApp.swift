@@ -22,7 +22,7 @@ struct ProcessBarMonitorApp: App {
         .menuBarExtraStyle(.window)
 
         Settings {
-            EmptyView()
+            SettingsView(viewModel: viewModel)
         }
     }
 }
