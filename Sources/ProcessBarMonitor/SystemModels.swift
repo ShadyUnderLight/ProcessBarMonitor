@@ -125,7 +125,11 @@ struct MetricPoint: Identifiable, Hashable {
 
 struct SystemSummary {
     let cpuPercent: Double
-    let memoryUsedBytes: UInt64
+    /// System-wide memory pages: active + inactive + wired + compressor.
+    /// This is the macOS "memory pressure" figure — not per-process RSS.
+    let systemMemoryUsedBytes: UInt64
+    /// Actual RSS of this app's processes, summed across all children.
+    let appMemoryUsedBytes: UInt64
     let memoryTotalBytes: UInt64
     let thermalState: ProcessInfo.ThermalState
     let cpuTemperatureC: Double?
@@ -134,12 +138,13 @@ struct SystemSummary {
 
     var memoryPressurePercent: Double {
         guard memoryTotalBytes > 0 else { return 0 }
-        return (Double(memoryUsedBytes) / Double(memoryTotalBytes)) * 100
+        return (Double(systemMemoryUsedBytes) / Double(memoryTotalBytes)) * 100
     }
 
     static let empty = SystemSummary(
         cpuPercent: 0,
-        memoryUsedBytes: 0,
+        systemMemoryUsedBytes: 0,
+        appMemoryUsedBytes: 0,
         memoryTotalBytes: 0,
         thermalState: .nominal,
         cpuTemperatureC: nil,

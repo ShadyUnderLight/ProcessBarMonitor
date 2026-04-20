@@ -1,5 +1,5 @@
 "summary.cpu" = "CPU";
-"summary.ram" = "RAM";
+"summary.ram" = "RAM (System-wide)";
 "summary.temp" = "Temp";
 "summary.thermal" = "Thermal";
 "metric.used_percent" = "%.0f%% used";

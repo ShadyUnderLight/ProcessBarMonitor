@@ -31,13 +31,22 @@ actor SystemMetricsProvider {
 
         return SystemSummary(
             cpuPercent: cpuUsagePercent(),
-            memoryUsedBytes: currentUsedMemory(),
+            systemMemoryUsedBytes: currentUsedMemory(),
+            appMemoryUsedBytes: currentAppMemoryBytes(),
             memoryTotalBytes: ProcessInfo.processInfo.physicalMemory,
             thermalState: ProcessInfo.processInfo.thermalState,
             cpuTemperatureC: temperature,
             architectureNote: architectureAndTemperatureNote(temperatureAvailable: temperature != nil, mode: temperatureMode),
             updatedAt: Date()
         )
+    }
+
+    /// Computes the current app's total RSS across all threads via proc_pidinfo.
+    private func currentAppMemoryBytes() -> UInt64 {
+        var info = proc_taskinfo()
+        let size = proc_pidinfo(getpid(), PROC_PIDTASKINFO, 0, &info, Int32(MemoryLayout<proc_taskinfo>.size))
+        guard size == Int32(MemoryLayout<proc_taskinfo>.size) else { return 0 }
+        return UInt64(info.pti_resident_size)
     }
 
     private func currentUsedMemory() -> UInt64 {
