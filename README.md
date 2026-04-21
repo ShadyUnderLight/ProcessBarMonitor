@@ -27,7 +27,7 @@ ProcessBarMonitor gives you a compact Activity Monitor-style summary without kee
 ## Features
 - Menu bar utility with live summary in the menu bar title
 - Overall CPU usage
-- Memory used / total memory
+- Memory pressure (system-wide active + inactive + wired + compressor)
 - Thermal state (Nominal / Fair / Serious / Critical)
 - Top apps by CPU
 - Top apps by memory
