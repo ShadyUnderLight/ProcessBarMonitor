@@ -1,11 +1,11 @@
 "summary.cpu" = "CPU";
-"summary.ram" = "内存 (系统级)";
+"summary.ram" = "内存压力";
 "summary.temp" = "温度";
 "summary.thermal" = "热状态";
-"metric.used_percent" = "已用 %.0f%%";
-"health.line" = "CPU %@ · 内存 %@ · 温度 %@";
+"metric.memory_pressure" = "%.0f%%";
+"health.line" = "CPU %@ · %@%% · 温度 %@";
 "trend.cpu" = "CPU 趋势";
-"trend.ram" = "内存趋势";
+"trend.ram" = "内存压力";
 "trend.temp" = "温度趋势";
 "section.filter_display" = "筛选与显示";
 "picker.menu_bar" = "菜单栏";

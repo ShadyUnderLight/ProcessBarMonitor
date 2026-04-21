@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 struct SummaryCardView: View {
     let title: String
     let value: String
+    var subtitle: String? = nil
     var accent: Color = .primary
 
     var body: some View {
@@ -23,6 +24,11 @@ struct SummaryCardView: View {
                 .foregroundStyle(accent)
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)
+            if let subtitle {
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
@@ -138,13 +144,17 @@ struct MenuBarContentView: View {
     }
 
     private var memorySummary: String {
+        String(format: "%.0f%%", viewModel.summary.memoryPressurePercent)
+    }
+
+    private var memoryBytesDetail: String {
         let used = ByteCountFormatter.string(fromByteCount: Int64(viewModel.summary.systemMemoryUsedBytes), countStyle: .memory)
         let total = ByteCountFormatter.string(fromByteCount: Int64(viewModel.summary.memoryTotalBytes), countStyle: .memory)
         return "\(used) / \(total)"
     }
 
     private var memoryCompact: String {
-        L10n.format("metric.used_percent", viewModel.summary.memoryPressurePercent)
+        L10n.format("metric.memory_pressure", viewModel.summary.memoryPressurePercent)
     }
 
     private var currentTemperatureColor: Color {
@@ -164,7 +174,7 @@ struct MenuBarContentView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 8) {
                     SummaryCardView(title: L10n.string("summary.cpu"), value: String(format: "%.1f %%", viewModel.summary.cpuPercent), accent: .primary)
-                    SummaryCardView(title: L10n.string("summary.ram"), value: memorySummary, accent: .blue)
+                    SummaryCardView(title: L10n.string("summary.ram"), value: memorySummary, subtitle: memoryBytesDetail, accent: .blue)
                     SummaryCardView(title: L10n.string("summary.temp"), value: viewModel.summary.cpuTemperatureC.map { String(format: "%.1f °C", $0) } ?? "--", accent: currentTemperatureColor)
                     SummaryCardView(title: L10n.string("summary.thermal"), value: viewModel.thermalText(viewModel.summary.thermalState), accent: .pink)
                 }

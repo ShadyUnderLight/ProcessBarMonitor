@@ -100,16 +100,16 @@ final class MonitorViewModel: ObservableObject {
 
     var menuBarTitle: String {
         let cpu = String(format: "%.0f%%", summary.cpuPercent)
-        let memoryUsed = shortMemoryString(bytes: summary.systemMemoryUsedBytes)
+        let mem = String(format: "%.0f%%", summary.memoryPressurePercent)
         let temp = summary.cpuTemperatureC.map { String(format: "%.0f°", $0) } ?? "--°"
 
         switch menuBarDisplayMode {
         case .compact:
-            return L10n.format("menu_bar_title.compact", cpu, memoryUsed, temp)
+            return L10n.format("menu_bar_title.compact", cpu, mem, temp)
         case .labeled:
-            return L10n.format("menu_bar_title.labeled", cpu, memoryUsed, temp)
+            return L10n.format("menu_bar_title.labeled", cpu, mem, temp)
         case .temperatureFirst:
-            return L10n.format("menu_bar_title.temperature_first", temp, cpu, memoryUsed)
+            return L10n.format("menu_bar_title.temperature_first", temp, cpu, mem)
         }
     }
 

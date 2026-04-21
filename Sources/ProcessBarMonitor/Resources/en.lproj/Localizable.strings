@@ -1,11 +1,11 @@
 "summary.cpu" = "CPU";
-"summary.ram" = "RAM (System-wide)";
+"summary.ram" = "Memory pressure";
 "summary.temp" = "Temp";
 "summary.thermal" = "Thermal";
-"metric.used_percent" = "%.0f%% used";
-"health.line" = "CPU %@ · RAM %@ · Temp %@";
+"metric.memory_pressure" = "%.0f%%";
+"health.line" = "CPU %@ · Mem %@ · Temp %@";
 "trend.cpu" = "CPU Trend";
-"trend.ram" = "RAM Trend";
+"trend.ram" = "Memory pressure";
 "trend.temp" = "Temp Trend";
 "section.filter_display" = "Filter & Display";
 "picker.menu_bar" = "Menu Bar";
@@ -42,7 +42,7 @@
 "menu_display.labeled" = "Labeled";
 "menu_display.temperature_first" = "Temperature First";
 "menu_bar_title.compact" = "%@  %@  %@";
-"menu_bar_title.labeled" = "CPU %@  RAM %@  %@";
+"menu_bar_title.labeled" = "CPU %@  Mem %@  %@";
 "menu_bar_title.temperature_first" = "%@  %@  %@";
 "temp_mode.hottest_cpu" = "Hottest CPU";
 "temp_mode.average_cpu" = "Average CPU";
