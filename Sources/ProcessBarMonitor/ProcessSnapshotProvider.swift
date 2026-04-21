@@ -35,14 +35,14 @@ actor ProcessSnapshotProvider {
     }
 
     private let psPath = "/bin/ps"
-    private let psArguments = ["-axo", "pid=,comm=,%cpu=,rss="]
+    private let psArguments = ["-axo", "pid=,%cpu=,rss="]
     private let metadataRefreshInterval: TimeInterval = 30
     private let maxMetadataLookupsPerSnapshot = 48
     private let maxConcurrentMetadataLookups = 8
 
-    private struct RawProcess: Sendable {
+    struct RawProcess: Sendable {
         let pid: Int
-        let command: String
+        let command: String?
         let rawCPUPercent: Double
         let memoryMB: Double
     }
@@ -88,10 +88,27 @@ actor ProcessSnapshotProvider {
         }
         let prioritizedPIDs = prioritizedMetadataPIDs(from: rawProcesses)
 
+        // Phase 2: fetch command names for top PIDs (avoids the space-in-comm parsing problem)
+        let topPIDs = Array(prioritizedPIDs)
+        let fetchedCommands = await fetchCommands(for: topPIDs)
+
+        // Fill commands back into rawProcesses so aggregate() / metadata have them
+        var rawProcessesWithCommand = rawProcesses
+        for i in rawProcessesWithCommand.indices {
+            if let cmd = fetchedCommands[rawProcessesWithCommand[i].pid] {
+                rawProcessesWithCommand[i] = RawProcess(
+                    pid: rawProcessesWithCommand[i].pid,
+                    command: cmd,
+                    rawCPUPercent: rawProcessesWithCommand[i].rawCPUPercent,
+                    memoryMB: rawProcessesWithCommand[i].memoryMB
+                )
+            }
+        }
+
         // Resolve metadata off the main thread with bounded concurrency
         let now = Date()
         let resolved = await resolveMetadataBatch(
-            rawProcesses: rawProcesses,
+            rawProcesses: rawProcessesWithCommand,
             prioritizedPIDs: prioritizedPIDs,
             now: now,
             maxConcurrent: maxConcurrentMetadataLookups
@@ -101,8 +118,8 @@ actor ProcessSnapshotProvider {
             metadataCache[pid] = CachedMetadata(metadata: metadata, updatedAt: now)
         }
 
-        pruneMetadataCache(validPIDs: Set(rawProcesses.map(\.pid)))
-        return aggregate(rawProcesses)
+        pruneMetadataCache(validPIDs: Set(rawProcessesWithCommand.map(\.pid)))
+        return aggregate(rawProcessesWithCommand)
     }
 
     /// Resolves metadata for prioritized PIDs in parallel via TaskGroup with bounded concurrency.
@@ -149,38 +166,49 @@ actor ProcessSnapshotProvider {
 
     /// Performs NSRunningApplication lookup off the main thread via Task.detached.
     /// Called from background tasks spawned by the TaskGroup in resolveMetadataBatch.
-    private static func resolveMetadataSync(pid: Int, command: String) -> AppMetadata {
+    private static func resolveMetadataSync(pid: Int, command: String?) -> AppMetadata {
+        let cmd = command ?? ""
         if let runningApp = NSRunningApplication(processIdentifier: pid_t(pid)) {
-            let appName = runningApp.localizedName ?? fallbackAppName(for: command)
+            let appName = runningApp.localizedName ?? fallbackAppName(for: cmd)
             return AppMetadata(
                 appName: appName,
                 bundleIdentifier: runningApp.bundleIdentifier,
-                commandKey: command
+                commandKey: cmd
             )
         }
 
         return AppMetadata(
-            appName: fallbackAppName(for: command),
+            appName: fallbackAppName(for: cmd),
             bundleIdentifier: nil,
-            commandKey: command
+            commandKey: cmd
         )
     }
 
-    private func parsePSOutput(_ raw: String) -> [RawProcess] {
+    // Regex: pid (digits), cpu (float, may be negative), rss (digits) — reliable, no spaces in these fields
+    private nonisolated static let psStatRegex = try! NSRegularExpression(
+        pattern: #"^\s*(\d+)\s+(-?[\d.]+)\s+(\d+)"#,
+        options: []
+    )
+
+    nonisolated func parsePSOutput(_ raw: String) -> [RawProcess] {
         raw
             .split(whereSeparator: { $0.isNewline })
             .compactMap { line -> RawProcess? in
-                let parts = line.split(separator: " ", maxSplits: 3, omittingEmptySubsequences: true)
-                guard parts.count == 4,
-                      let pid = Int(parts[0]),
-                      let cpu = Double(parts[2]),
-                      let rssKB = Double(parts[3]) else {
+                let lineStr = String(line)
+                let range = NSRange(lineStr.startIndex..., in: lineStr)
+                guard let match = Self.psStatRegex.firstMatch(in: lineStr, options: [], range: range),
+                      let pidRange = Range(match.range(at: 1), in: lineStr),
+                      let cpuRange = Range(match.range(at: 2), in: lineStr),
+                      let rssRange = Range(match.range(at: 3), in: lineStr),
+                      let pid = Int(lineStr[pidRange]),
+                      let cpu = Double(lineStr[cpuRange]),
+                      let rssKB = Double(lineStr[rssRange]) else {
                     return nil
                 }
 
                 return RawProcess(
                     pid: pid,
-                    command: String(parts[1]),
+                    command: nil,
                     rawCPUPercent: max(cpu, 0),
                     memoryMB: rssKB / 1024
                 )
@@ -212,13 +240,14 @@ actor ProcessSnapshotProvider {
         var aggregates: [String: Aggregate] = [:]
 
         for raw in rawProcesses {
+            let command = raw.command ?? metadataCache[raw.pid]?.metadata.commandKey ?? ""
             let metadata = metadataCache[raw.pid]?.metadata ?? AppMetadata(
-                appName: Self.fallbackAppName(for: raw.command),
+                appName: Self.fallbackAppName(for: command),
                 bundleIdentifier: nil,
-                commandKey: raw.command
+                commandKey: command
             )
             let key = aggregateKey(for: metadata)
-            let child = ProcessChildStat(pid: raw.pid, command: raw.command, cpuPercent: raw.rawCPUPercent, memoryMB: raw.memoryMB)
+            let child = ProcessChildStat(pid: raw.pid, command: command, cpuPercent: raw.rawCPUPercent, memoryMB: raw.memoryMB)
 
             if var existing = aggregates[key] {
                 existing.cpuPercent += raw.rawCPUPercent
@@ -230,7 +259,7 @@ actor ProcessSnapshotProvider {
             } else {
                 aggregates[key] = Aggregate(
                     pid: raw.pid,
-                    command: raw.command,
+                    command: command,
                     appName: metadata.appName,
                     bundleIdentifier: metadata.bundleIdentifier,
                     cpuPercent: raw.rawCPUPercent,
@@ -266,6 +295,54 @@ actor ProcessSnapshotProvider {
         }
 
         return "command:\(metadata.commandKey)"
+    }
+
+    /// Fetches the executable name for a single PID via `ps -p <pid> -o comm=`.
+    /// Uses the basename-safe `comm=` format which avoids spaces in the path issue.
+    private static func fetchCommand(for pid: Int) -> String? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/ps")
+        process.arguments = ["-p", "\(pid)", "-o", "comm="]
+
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+
+        do {
+            try process.run()
+        } catch {
+            return nil
+        }
+
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return nil }
+
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        guard let raw = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !raw.isEmpty else {
+            return nil
+        }
+
+        return raw
+    }
+
+    /// Fetches commands for a batch of PIDs concurrently.
+    private func fetchCommands(for pids: [Int]) async -> [Int: String] {
+        await withTaskGroup(of: (Int, String?).self) { group in
+            for pid in pids {
+                group.addTask {
+                    (pid, Self.fetchCommand(for: pid))
+                }
+            }
+
+            var results: [Int: String] = [:]
+            for await (pid, command) in group {
+                if let command {
+                    results[pid] = command
+                }
+            }
+            return results
+        }
     }
 
     private static func fallbackAppName(for command: String) -> String {
