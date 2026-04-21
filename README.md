@@ -62,7 +62,8 @@ GitHub Actions now builds the Swift package and app bundle automatically on push
 ## Notes on CPU temperature
 macOS does not expose CPU temperature through a stable public API for normal apps. This app therefore:
 - tries to read temperature from installed helper tools such as `osx-cpu-temp` or `istats`
-- falls back to `--` plus thermal state if no helper is available
+- on Apple Silicon: reads HID sensors first, falls back to helper tools
+- shows an actionable hint (e.g. install hint on Intel, permission check on Apple Silicon) when temperature is unavailable — no silent `--`
 - does **not** require sudo or private entitlements
 
 ## Known limitations
@@ -71,8 +72,7 @@ macOS does not expose CPU temperature through a stable public API for normal app
 - The app is still being polished for wider public release
 
 ## Roadmap ideas
-- Sparklines / history
-- Per-process actions
+- Per-process actions (e.g. kill, priority adjustment)
 - Better sensor integrations
 - Further performance tuning
 
