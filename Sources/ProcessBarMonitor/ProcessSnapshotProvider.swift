@@ -240,7 +240,10 @@ actor ProcessSnapshotProvider {
         var aggregates: [String: Aggregate] = [:]
 
         for raw in rawProcesses {
-            let command = raw.command ?? metadataCache[raw.pid]?.metadata.commandKey ?? ""
+            // Fallback chain: fetched comm → cached commandKey → pid-based key.
+            // The pid-based key prevents unrelated processes from collapsing into
+            // the same empty-string aggregate when neither phase 2 fetch nor cache hit.
+            let command = raw.command ?? metadataCache[raw.pid]?.metadata.commandKey ?? "pid:\(raw.pid)"
             let metadata = metadataCache[raw.pid]?.metadata ?? AppMetadata(
                 appName: Self.fallbackAppName(for: command),
                 bundleIdentifier: nil,
@@ -294,6 +297,24 @@ actor ProcessSnapshotProvider {
             return "bundle:\(bundleIdentifier)"
         }
 
+        return "command:\(metadata.commandKey)"
+    }
+
+    // MARK: - Test helpers (nonisolated, safe to call from tests)
+
+    /// Test-only: simulates the command fallback chain without needing actor state.
+    /// - Parameters mirror what `aggregate()` sees per RawProcess entry.
+    static func aggregateKeyForTest(pid: Int, command: String?, cachedMetadata: AppMetadata?) -> String {
+        let resolvedCommand = command ?? cachedMetadata?.commandKey ?? "pid:\(pid)"
+        let metadata = cachedMetadata ?? AppMetadata(
+            appName: fallbackAppName(for: resolvedCommand),
+            bundleIdentifier: nil,
+            commandKey: resolvedCommand
+        )
+        // Replicate aggregateKey logic
+        if let bundleIdentifier = metadata.bundleIdentifier {
+            return "bundle:\(bundleIdentifier)"
+        }
         return "command:\(metadata.commandKey)"
     }
 
