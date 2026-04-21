@@ -59,6 +59,9 @@
 "note.temperature.arm64_unavailable" = "Apple Silicon HID sensors were checked for %@, but no valid value was exposed right now.";
 "note.temperature.intel_hint" = "Intel: install osx-cpu-temp or istats to show a real CPU temperature.";
 "note.temperature.no_source" = "No valid CPU temperature source found.";
+"hint.temperature.intel_install" = "Intel Mac: install osx-cpu-temp or istats to show CPU temperature.";
+"hint.temperature.arm64_read_failed" = "Apple Silicon: temperature reading failed. Check System Settings > Privacy & Security.";
+"note.temperature.available" = "Temperature mode: %@. Source: Apple Silicon HID sensors first, helper fallback second.";
 "button.copy_diagnostics" = "Copy Diagnostics";
 "status.diagnostics_copied" = "Diagnostics copied to clipboard.";
 "status.diagnostics_copy_failed" = "Failed to copy diagnostics.";
