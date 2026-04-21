@@ -231,9 +231,7 @@ struct MenuBarContentView: View {
                             Text(mode.title).tag(mode)
                         }
                     }
-                    .onChange(of: viewModel.temperatureMode) { _ in
-                        Task { await viewModel.refresh(forceProcesses: true) }
-                    }
+                    // Refresh side-effect is in MonitorViewModel.temperatureMode.didSet
 
                     TextField(L10n.string("search.placeholder"), text: $viewModel.searchText)
                         .textFieldStyle(.roundedBorder)
@@ -248,9 +246,7 @@ struct MenuBarContentView: View {
                         Text("20").tag(20)
                     }
                     .pickerStyle(.segmented)
-                    .onChange(of: viewModel.processLimit) { _ in
-                        viewModel.recomputeVisibleProcesses()
-                    }
+                    // Side-effect (recomputeVisibleProcesses) is in MonitorViewModel.processLimit.didSet
                 }
 
                 Toggle(L10n.string("toggle.launch_at_login"), isOn: Binding(

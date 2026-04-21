@@ -39,13 +39,26 @@ final class MonitorViewModel: ObservableObject {
 
     @Published var searchText = ""
     @Published var processLimit: Int {
-        didSet { settings.set(processLimit, forKey: Keys.processLimit) }
+        didSet {
+            settings.set(processLimit, forKey: Keys.processLimit)
+            // Immediately reflect the new row count in the visible process list.
+            recomputeVisibleProcesses()
+        }
     }
     @Published var temperatureMode: TemperatureMode {
-        didSet { settings.set(temperatureMode.rawValue, forKey: Keys.temperatureMode) }
+        didSet {
+            settings.set(temperatureMode.rawValue, forKey: Keys.temperatureMode)
+            // Immediate refresh ensures the new temperature mode is reflected
+            // without waiting for the next scheduled refresh cycle.
+            Task { await refresh(forceProcesses: true) }
+        }
     }
     @Published var menuBarDisplayMode: MenuBarDisplayMode {
-        didSet { settings.set(menuBarDisplayMode.rawValue, forKey: Keys.menuBarDisplayMode) }
+        didSet {
+            settings.set(menuBarDisplayMode.rawValue, forKey: Keys.menuBarDisplayMode)
+            // Refresh so the menu bar title format update is immediate.
+            Task { await refresh(forceProcesses: false) }
+        }
     }
 
     private let metricsProvider = SystemMetricsProvider()
