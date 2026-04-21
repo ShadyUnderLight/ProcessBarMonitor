@@ -121,6 +121,9 @@ struct ProcessStat: Identifiable, Hashable {
 struct MetricPoint: Identifiable, Hashable {
     let id = UUID()
     let value: Double
+    /// When true, this point represents unavailable/stale data and should be
+    /// visually distinguished (e.g. greyed, dashed, or treated as a gap).
+    var isStale: Bool = false
 }
 
 struct SystemSummary {
