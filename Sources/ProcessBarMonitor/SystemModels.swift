@@ -134,9 +134,6 @@ struct SystemSummary {
     let thermalState: ProcessInfo.ThermalState
     let cpuTemperatureC: Double?
     let architectureNote: String
-    /// Actionable hint shown when temperature is unavailable (nil).
-    /// - Intel without tool: install hint; Apple Silicon read-fail: permission check hint.
-    let temperatureHint: String?
     let updatedAt: Date
 
     var memoryPressurePercent: Double {
@@ -152,7 +149,6 @@ struct SystemSummary {
         thermalState: .nominal,
         cpuTemperatureC: nil,
         architectureNote: "",
-        temperatureHint: nil,
         updatedAt: Date()
     )
 }

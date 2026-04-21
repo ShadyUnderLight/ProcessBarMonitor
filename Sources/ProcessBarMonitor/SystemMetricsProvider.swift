@@ -37,7 +37,6 @@ actor SystemMetricsProvider {
             thermalState: ProcessInfo.processInfo.thermalState,
             cpuTemperatureC: temperature,
             architectureNote: architectureAndTemperatureNote(temperatureAvailable: temperature != nil, mode: temperatureMode),
-            temperatureHint: temperatureHint(temperatureAvailable: temperature != nil),
             updatedAt: Date()
         )
     }
@@ -202,18 +201,6 @@ actor SystemMetricsProvider {
         return L10n.string("note.temperature.intel_hint")
         #else
         return L10n.string("note.temperature.no_source")
-        #endif
-    }
-
-    /// Returns an actionable hint string when temperature is unavailable, nil when temperature is present.
-    private func temperatureHint(temperatureAvailable: Bool) -> String? {
-        guard !temperatureAvailable else { return nil }
-        #if arch(arm64)
-        return L10n.string("hint.temperature.arm64_read_failed")
-        #elseif arch(x86_64)
-        return L10n.string("hint.temperature.intel_install")
-        #else
-        return nil
         #endif
     }
 }

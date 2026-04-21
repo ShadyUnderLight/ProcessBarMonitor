@@ -175,12 +175,6 @@ struct MenuBarContentView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
-                    if viewModel.summary.cpuTemperatureC == nil, let hint = viewModel.summary.temperatureHint {
-                        Text(hint)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.orange)
-                            .lineLimit(2)
-                    }
                 }
 
                 HStack(spacing: 8) {
