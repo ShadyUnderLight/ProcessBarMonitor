@@ -195,8 +195,11 @@ final class MonitorViewModel: ObservableObject {
 
         if let temperature {
             temperatureHistory.append(MetricPoint(value: temperature))
-        } else if let last = temperatureHistory.last {
-            temperatureHistory.append(MetricPoint(value: last.value))
+        } else {
+            // Temperature unavailable: record a stale point so the sparkline
+            // visually gaps rather than silently repeating the last known value.
+            let value = temperatureHistory.last?.value
+            temperatureHistory.append(MetricPoint(value: value ?? 0, isStale: true))
         }
 
         let limit = 60
