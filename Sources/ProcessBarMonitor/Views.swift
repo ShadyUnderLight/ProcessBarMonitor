@@ -127,12 +127,13 @@ struct MenuBarContentView: View {
             window.close()
         }
 
+        // Standard macOS termination.  The 0.5 s + exit(0) fallback that existed here
+        // was added without a linked issue or documented reproduction, and stop() has no
+        // persistent background work that would prevent terminate from succeeding.
+        // If a future regression shows terminate is insufficient, re-add the fallback
+        // only with a comment explaining the specific failure mode and a tracking issue.
         DispatchQueue.main.async {
             NSApp.terminate(nil)
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            exit(0)
         }
     }
 
