@@ -34,7 +34,7 @@ enum L10n {
         String(format: string(key), locale: Locale.current, arguments: arguments)
     }
 
-    private static func localizationCandidates(for language: String) -> [String] {
+    static func localizationCandidates(for language: String) -> [String] {
         let parts = language.split(separator: "-").map(String.init)
         guard !parts.isEmpty else { return [language] }
 
