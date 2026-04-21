@@ -24,9 +24,7 @@ struct SettingsView: View {
                     Text("12").tag(12)
                     Text("20").tag(20)
                 }
-                .onChange(of: viewModel.processLimit) { _ in
-                    viewModel.recomputeVisibleProcesses()
-                }
+                // Side-effect (recomputeVisibleProcesses) is in MonitorViewModel.processLimit.didSet
             } header: {
                 Text(L10n.string("settings.section.display"))
             }
