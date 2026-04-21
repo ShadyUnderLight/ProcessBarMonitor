@@ -185,11 +185,16 @@ actor SystemMetricsProvider {
         return extractTemperature(from: raw)
     }
 
-    private func extractTemperature(from raw: String) -> Double? {
+    private nonisolated func extractTemperature(from raw: String) -> Double? {
         let matches = raw.matches(of: /-?\d+(?:\.\d+)?/)
         guard let first = matches.first,
               let value = Double(first.output), value > 1, value < 120 else { return nil }
         return value
+    }
+
+    /// Test-only: exposes extractTemperature to the test target without breaking actor isolation.
+    nonisolated func extractTemperatureTest(from raw: String) -> Double? {
+        extractTemperature(from: raw)
     }
 
     private func architectureAndTemperatureNote(temperatureAvailable: Bool, mode: TemperatureMode) -> String {
