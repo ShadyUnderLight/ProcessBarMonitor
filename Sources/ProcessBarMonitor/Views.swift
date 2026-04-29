@@ -329,35 +329,16 @@ Divider()
                     Divider()
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(L10n.string("section.top_apps_memory"))
-                        .font(.headline)
-                    Text(L10n.string("section.top_apps_memory_desc"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    processHeader
-                    ForEach(viewModel.topMemoryProcesses) { process in
-                        ProcessRowView(
-                            process: process,
-                            expanded: expandedMemoryApps.contains(process.id),
-                            onToggle: {
-                                if expandedMemoryApps.contains(process.id) { expandedMemoryApps.remove(process.id) }
-                                else { expandedMemoryApps.insert(process.id) }
-                            }
-                        )
-                    }
-                }
-
-                Divider()
-
                 HStack {
                     Button(action: { Task { await viewModel.refresh(forceProcesses: true) } }) {
                         Text(viewModel.isRefreshing ? L10n.string("button.refreshing") : L10n.string("button.refresh_now"))
                     }
                     .disabled(viewModel.isRefreshing)
 
-                    Button(L10n.string("button.copy_diagnostics")) {
-                        viewModel.copyDiagnosticsToPasteboard()
+                    if viewModel.moduleVisibility.contains(.diagnostics) {
+                        Button(L10n.string("button.copy_diagnostics")) {
+                            viewModel.copyDiagnosticsToPasteboard()
+                        }
                     }
 
                     Button(L10n.string("button.quit")) {

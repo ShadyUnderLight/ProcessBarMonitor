@@ -272,4 +272,30 @@ final class MonitorViewModelTests: XCTestCase {
         let vm = MonitorViewModel(defaults: defaults)
         XCTAssertEqual(vm.moduleVisibility, .defaultVisibility)
     }
+
+    // MARK: - displayTemplate drives menuBarTitle format
+
+    @MainActor
+    func testMenuBarTitle_usesDisplayTemplate_minimal() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("minimal", forKey: "displayTemplate")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.displayTemplate, .minimal)
+    }
+
+    @MainActor
+    func testMenuBarTitle_usesDisplayTemplate_standard() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("standard", forKey: "displayTemplate")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.displayTemplate, .standard)
+    }
+
+    @MainActor
+    func testMenuBarTitle_usesDisplayTemplate_detailed() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("detailed", forKey: "displayTemplate")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.displayTemplate, .detailed)
+    }
 }
