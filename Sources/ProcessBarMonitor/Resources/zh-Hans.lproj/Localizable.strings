@@ -71,3 +71,13 @@
 "refresh_rate.power_saving" = "省电";
 "refresh_rate.balanced" = "平衡";
 "refresh_rate.real_time" = "实时";
+"picker.display_template" = "显示模板";
+"template.minimal" = "极简";
+"template.standard" = "标准";
+"template.detailed" = "详情";
+"settings.section.modules" = "弹窗模块";
+"toggle.sparklines" = "趋势图";
+"toggle.top_cpu" = "CPU 占用最高应用";
+"toggle.top_memory" = "内存占用最高应用";
+"toggle.temperature_hint" = "温度提示";
+"toggle.diagnostics" = "诊断信息";

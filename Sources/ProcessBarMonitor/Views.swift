@@ -179,49 +179,53 @@ struct MenuBarContentView: View {
                     SummaryCardView(title: L10n.string("summary.thermal"), value: viewModel.thermalText(viewModel.summary.thermalState), accent: .pink)
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(healthLine)
-                        .font(.subheadline.weight(.medium))
-                    Text(viewModel.summary.architectureNote)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                    if viewModel.summary.cpuTemperatureC == nil, let hint = viewModel.summary.temperatureHint {
-                        Text(hint)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.orange)
+                if viewModel.moduleVisibility.contains(.temperatureHint) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(healthLine)
+                            .font(.subheadline.weight(.medium))
+                        Text(viewModel.summary.architectureNote)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                             .lineLimit(2)
+                        if viewModel.summary.cpuTemperatureC == nil, let hint = viewModel.summary.temperatureHint {
+                            Text(hint)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.orange)
+                                .lineLimit(2)
+                        }
                     }
                 }
 
-                HStack(spacing: 8) {
-                    SparklineView(
-                        title: L10n.string("trend.cpu"),
-                        points: viewModel.cpuHistory,
-                        color: .primary,
-                        valueText: String(format: "%.1f%%", viewModel.summary.cpuPercent),
-                        fixedMax: 100,
-                        warningThreshold: 60,
-                        criticalThreshold: 85
-                    )
-                    SparklineView(
-                        title: L10n.string("trend.ram"),
-                        points: viewModel.memoryHistory,
-                        color: .blue,
-                        valueText: String(format: "%.0f%%", viewModel.summary.memoryPressurePercent),
-                        fixedMax: 100,
-                        warningThreshold: 75,
-                        criticalThreshold: 90
-                    )
-                    SparklineView(
-                        title: L10n.string("trend.temp"),
-                        points: viewModel.temperatureHistory,
-                        color: .green,
-                        valueText: viewModel.summary.cpuTemperatureC.map { String(format: "%.1f°C", $0) } ?? "--",
-                        fixedMax: nil,
-                        warningThreshold: 70,
-                        criticalThreshold: 85
-                    )
+                if viewModel.moduleVisibility.contains(.sparklines) {
+                    HStack(spacing: 8) {
+                        SparklineView(
+                            title: L10n.string("trend.cpu"),
+                            points: viewModel.cpuHistory,
+                            color: .primary,
+                            valueText: String(format: "%.1f%%", viewModel.summary.cpuPercent),
+                            fixedMax: 100,
+                            warningThreshold: 60,
+                            criticalThreshold: 85
+                        )
+                        SparklineView(
+                            title: L10n.string("trend.ram"),
+                            points: viewModel.memoryHistory,
+                            color: .blue,
+                            valueText: String(format: "%.0f%%", viewModel.summary.memoryPressurePercent),
+                            fixedMax: 100,
+                            warningThreshold: 75,
+                            criticalThreshold: 90
+                        )
+                        SparklineView(
+                            title: L10n.string("trend.temp"),
+                            points: viewModel.temperatureHistory,
+                            color: .green,
+                            valueText: viewModel.summary.cpuTemperatureC.map { String(format: "%.1f°C", $0) } ?? "--",
+                            fixedMax: nil,
+                            warningThreshold: 70,
+                            criticalThreshold: 85
+                        )
+                    }
                 }
 
                 Divider()
@@ -277,49 +281,53 @@ struct MenuBarContentView: View {
                         }
                 }
 
-                Divider()
+Divider()
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(L10n.string("section.top_apps_cpu"))
-                        .font(.headline)
-                    Text(L10n.string("section.top_apps_cpu_desc"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    processHeader
-                    ForEach(viewModel.topCPUProcesses) { process in
-                        ProcessRowView(
-                            process: process,
-                            expanded: expandedCPUApps.contains(process.id),
-                            onToggle: {
-                                if expandedCPUApps.contains(process.id) { expandedCPUApps.remove(process.id) }
-                                else { expandedCPUApps.insert(process.id) }
-                            }
-                        )
+                if viewModel.moduleVisibility.contains(.topCPU) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(L10n.string("section.top_apps_cpu"))
+                            .font(.headline)
+                        Text(L10n.string("section.top_apps_cpu_desc"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        processHeader
+                        ForEach(viewModel.topCPUProcesses) { process in
+                            ProcessRowView(
+                                process: process,
+                                expanded: expandedCPUApps.contains(process.id),
+                                onToggle: {
+                                    if expandedCPUApps.contains(process.id) { expandedCPUApps.remove(process.id) }
+                                    else { expandedCPUApps.insert(process.id) }
+                                }
+                            )
+                        }
                     }
+
+                    Divider()
                 }
 
-                Divider()
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(L10n.string("section.top_apps_memory"))
-                        .font(.headline)
-                    Text(L10n.string("section.top_apps_memory_desc"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    processHeader
-                    ForEach(viewModel.topMemoryProcesses) { process in
-                        ProcessRowView(
-                            process: process,
-                            expanded: expandedMemoryApps.contains(process.id),
-                            onToggle: {
-                                if expandedMemoryApps.contains(process.id) { expandedMemoryApps.remove(process.id) }
-                                else { expandedMemoryApps.insert(process.id) }
-                            }
-                        )
+                if viewModel.moduleVisibility.contains(.topMemory) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(L10n.string("section.top_apps_memory"))
+                            .font(.headline)
+                        Text(L10n.string("section.top_apps_memory_desc"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        processHeader
+                        ForEach(viewModel.topMemoryProcesses) { process in
+                            ProcessRowView(
+                                process: process,
+                                expanded: expandedMemoryApps.contains(process.id),
+                                onToggle: {
+                                    if expandedMemoryApps.contains(process.id) { expandedMemoryApps.remove(process.id) }
+                                    else { expandedMemoryApps.insert(process.id) }
+                                }
+                            )
+                        }
                     }
-                }
 
-                Divider()
+                    Divider()
+                }
 
                 HStack {
                     Button(action: { Task { await viewModel.refresh(forceProcesses: true) } }) {
@@ -327,8 +335,10 @@ struct MenuBarContentView: View {
                     }
                     .disabled(viewModel.isRefreshing)
 
-                    Button(L10n.string("button.copy_diagnostics")) {
-                        viewModel.copyDiagnosticsToPasteboard()
+                    if viewModel.moduleVisibility.contains(.diagnostics) {
+                        Button(L10n.string("button.copy_diagnostics")) {
+                            viewModel.copyDiagnosticsToPasteboard()
+                        }
                     }
 
                     Button(L10n.string("button.quit")) {
