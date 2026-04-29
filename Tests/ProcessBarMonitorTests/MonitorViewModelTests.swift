@@ -141,4 +141,53 @@ final class MonitorViewModelTests: XCTestCase {
         let vm = MonitorViewModel(defaults: defaults)
         XCTAssertEqual(vm.processLimit, 5, "invalid processLimit should fall back to 5")
     }
+
+    // MARK: - Refresh rate preset defaults and migration
+
+    @MainActor
+    func testDefault_refreshRatePreset_isBalanced() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.refreshRatePreset, .balanced)
+    }
+
+    @MainActor
+    func testMigration_modernPowerSavingString() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("powerSaving", forKey: "refreshRatePreset")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.refreshRatePreset, .powerSaving)
+    }
+
+    @MainActor
+    func testMigration_modernBalancedString() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("balanced", forKey: "refreshRatePreset")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.refreshRatePreset, .balanced)
+    }
+
+    @MainActor
+    func testMigration_modernRealTimeString() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("realTime", forKey: "refreshRatePreset")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.refreshRatePreset, .realTime)
+    }
+
+    @MainActor
+    func testMigration_legacyPowerSavingString() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("Power Saving", forKey: "refreshRatePreset")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.refreshRatePreset, .powerSaving)
+    }
+
+    @MainActor
+    func testMigration_invalidRefreshRatePresetFallsBack() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("foobar", forKey: "refreshRatePreset")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.refreshRatePreset, .balanced, "invalid value should fall back to .balanced")
+    }
 }

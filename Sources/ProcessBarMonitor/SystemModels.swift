@@ -37,6 +37,55 @@ enum TemperatureMode: String, CaseIterable, Identifiable {
     }
 }
 
+enum RefreshRatePreset: String, CaseIterable, Identifiable {
+    case powerSaving
+    case balanced
+    case realTime
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .powerSaving:
+            return L10n.string("refresh_rate.power_saving")
+        case .balanced:
+            return L10n.string("refresh_rate.balanced")
+        case .realTime:
+            return L10n.string("refresh_rate.real_time")
+        }
+    }
+
+    var summaryInterval: UInt64 {
+        switch self {
+        case .powerSaving: return 10_000_000_000
+        case .balanced: return 2_000_000_000
+        case .realTime: return 500_000_000
+        }
+    }
+
+    var processInterval: TimeInterval {
+        switch self {
+        case .powerSaving: return 30
+        case .balanced: return 10
+        case .realTime: return 5
+        }
+    }
+
+    init?(savedValue: String) {
+        if let preset = RefreshRatePreset(rawValue: savedValue) {
+            self = preset
+            return
+        }
+
+        switch savedValue {
+        case "Power Saving": self = .powerSaving
+        case "Balanced": self = .balanced
+        case "Real-time": self = .realTime
+        default: return nil
+        }
+    }
+}
+
 enum MenuBarDisplayMode: String, CaseIterable, Identifiable {
     case compact
     case labeled
