@@ -58,6 +58,10 @@ final class MonitorViewModel: ObservableObject {
         didSet {
             settings.set(refreshRatePreset.rawValue, forKey: Keys.refreshRatePreset)
             applyRefreshRatePreset()
+            if let existingTask = refreshTask {
+                existingTask.cancel()
+                refreshTask = createRefreshTask()
+            }
         }
     }
 
@@ -135,6 +139,17 @@ final class MonitorViewModel: ObservableObject {
         currentProcessRefreshInterval = refreshRatePreset.processInterval
     }
 
+    private func createRefreshTask() -> Task<Void, Never> {
+        Task { [weak self] in
+            await self?.refresh(forceProcesses: true)
+            while !Task.isCancelled {
+                guard let self else { return }
+                try? await Task.sleep(nanoseconds: self.currentSummaryRefreshInterval)
+                await self.refresh()
+            }
+        }
+    }
+
     func start() {
         guard refreshTask == nil else { return }
 
@@ -149,14 +164,7 @@ final class MonitorViewModel: ObservableObject {
         launchAtLogin.refreshState()
         applyRefreshRatePreset()
 
-        refreshTask = Task { [weak self] in
-            await self?.refresh(forceProcesses: true)
-            while !Task.isCancelled {
-                guard let self else { return }
-                try? await Task.sleep(nanoseconds: self.currentSummaryRefreshInterval)
-                await self.refresh()
-            }
-        }
+        refreshTask = createRefreshTask()
     }
 
     func stop() {
