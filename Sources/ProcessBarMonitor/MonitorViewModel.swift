@@ -64,6 +64,16 @@ final class MonitorViewModel: ObservableObject {
             }
         }
     }
+    @Published var displayTemplate: MenuBarDisplayTemplate {
+        didSet {
+            settings.set(displayTemplate.rawValue, forKey: Keys.displayTemplate)
+        }
+    }
+    @Published var moduleVisibility: PopupModuleVisibility {
+        didSet {
+            settings.set(moduleVisibility.rawValue, forKey: Keys.moduleVisibility)
+        }
+    }
 
     private var currentSummaryRefreshInterval: UInt64 = 2_000_000_000
     private var currentProcessRefreshInterval: TimeInterval = 10
@@ -82,6 +92,8 @@ final class MonitorViewModel: ObservableObject {
         static let temperatureMode = "temperatureMode"
         static let menuBarDisplayMode = "menuBarDisplayMode"
         static let refreshRatePreset = "refreshRatePreset"
+        static let displayTemplate = "displayTemplate"
+        static let moduleVisibility = "moduleVisibility"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -110,6 +122,24 @@ final class MonitorViewModel: ObservableObject {
             refreshRatePreset = parsedRefreshRatePreset
         } else {
             refreshRatePreset = .balanced
+        }
+
+        if let rawDisplayTemplate = settings.string(forKey: Keys.displayTemplate),
+           let parsedTemplate = MenuBarDisplayTemplate(savedValue: rawDisplayTemplate) {
+            displayTemplate = parsedTemplate
+        } else {
+            displayTemplate = .standard
+        }
+
+        if let savedRaw = settings.int(forKey: Keys.moduleVisibility) {
+            let visibility = PopupModuleVisibility(rawValue: savedRaw)
+            if visibility.isEmpty || (visibility.rawValue & ~PopupModuleVisibility.all.rawValue) != 0 {
+                moduleVisibility = .defaultVisibility
+            } else {
+                moduleVisibility = visibility
+            }
+        } else {
+            moduleVisibility = .defaultVisibility
         }
     }
 

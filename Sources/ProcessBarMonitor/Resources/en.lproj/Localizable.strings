@@ -71,3 +71,13 @@
 "refresh_rate.power_saving" = "Power Saving";
 "refresh_rate.balanced" = "Balanced";
 "refresh_rate.real_time" = "Real-time";
+"picker.display_template" = "Display Template";
+"template.minimal" = "Minimal";
+"template.standard" = "Standard";
+"template.detailed" = "Detailed";
+"settings.section.modules" = "Popup Modules";
+"toggle.sparklines" = "Sparklines";
+"toggle.top_cpu" = "Top CPU Apps";
+"toggle.top_memory" = "Top Memory Apps";
+"toggle.temperature_hint" = "Temperature Hint";
+"toggle.diagnostics" = "Diagnostics";

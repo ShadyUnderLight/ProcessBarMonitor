@@ -123,6 +123,55 @@ enum MenuBarDisplayMode: String, CaseIterable, Identifiable {
     }
 }
 
+enum MenuBarDisplayTemplate: String, CaseIterable, Identifiable {
+    case minimal
+    case standard
+    case detailed
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .minimal:
+            return L10n.string("template.minimal")
+        case .standard:
+            return L10n.string("template.standard")
+        case .detailed:
+            return L10n.string("template.detailed")
+        }
+    }
+
+    init?(savedValue: String) {
+        if let template = MenuBarDisplayTemplate(rawValue: savedValue) {
+            self = template
+            return
+        }
+
+        switch savedValue {
+        case "Minimal": self = .minimal
+        case "Standard": self = .standard
+        case "Detailed": self = .detailed
+        default: return nil
+        }
+    }
+}
+
+struct PopupModuleVisibility: OptionSet, Equatable {
+    let rawValue: Int
+
+    static let sparklines        = PopupModuleVisibility(rawValue: 1 << 0)
+    static let topCPU           = PopupModuleVisibility(rawValue: 1 << 1)
+    static let topMemory        = PopupModuleVisibility(rawValue: 1 << 2)
+    static let temperatureHint  = PopupModuleVisibility(rawValue: 1 << 3)
+    static let diagnostics      = PopupModuleVisibility(rawValue: 1 << 4)
+
+    static let all: PopupModuleVisibility = [.sparklines, .topCPU, .topMemory, .temperatureHint, .diagnostics]
+
+    static var defaultVisibility: PopupModuleVisibility {
+        [.sparklines, .topCPU, .topMemory]
+    }
+}
+
 struct ProcessChildStat: Identifiable, Hashable {
     let pid: Int
     let command: String

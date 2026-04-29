@@ -30,8 +30,39 @@ struct SettingsView: View {
                         Text(preset.title).tag(preset)
                     }
                 }
+
+                Picker(L10n.string("picker.display_template"), selection: $viewModel.displayTemplate) {
+                    ForEach(MenuBarDisplayTemplate.allCases) { template in
+                        Text(template.title).tag(template)
+                    }
+                }
             } header: {
                 Text(L10n.string("settings.section.display"))
+            }
+
+            Section {
+                Toggle(L10n.string("toggle.sparklines"), isOn: Binding(
+                    get: { viewModel.moduleVisibility.contains(.sparklines) },
+                    set: { viewModel.moduleVisibility = $0 ? viewModel.moduleVisibility.union(.sparklines) : viewModel.moduleVisibility.subtracting(.sparklines) }
+                ))
+                Toggle(L10n.string("toggle.top_cpu"), isOn: Binding(
+                    get: { viewModel.moduleVisibility.contains(.topCPU) },
+                    set: { viewModel.moduleVisibility = $0 ? viewModel.moduleVisibility.union(.topCPU) : viewModel.moduleVisibility.subtracting(.topCPU) }
+                ))
+                Toggle(L10n.string("toggle.top_memory"), isOn: Binding(
+                    get: { viewModel.moduleVisibility.contains(.topMemory) },
+                    set: { viewModel.moduleVisibility = $0 ? viewModel.moduleVisibility.union(.topMemory) : viewModel.moduleVisibility.subtracting(.topMemory) }
+                ))
+                Toggle(L10n.string("toggle.temperature_hint"), isOn: Binding(
+                    get: { viewModel.moduleVisibility.contains(.temperatureHint) },
+                    set: { viewModel.moduleVisibility = $0 ? viewModel.moduleVisibility.union(.temperatureHint) : viewModel.moduleVisibility.subtracting(.temperatureHint) }
+                ))
+                Toggle(L10n.string("toggle.diagnostics"), isOn: Binding(
+                    get: { viewModel.moduleVisibility.contains(.diagnostics) },
+                    set: { viewModel.moduleVisibility = $0 ? viewModel.moduleVisibility.union(.diagnostics) : viewModel.moduleVisibility.subtracting(.diagnostics) }
+                ))
+            } header: {
+                Text(L10n.string("settings.section.modules"))
             }
 
             Section {

@@ -190,4 +190,86 @@ final class MonitorViewModelTests: XCTestCase {
         let vm = MonitorViewModel(defaults: defaults)
         XCTAssertEqual(vm.refreshRatePreset, .balanced, "invalid value should fall back to .balanced")
     }
+
+    // MARK: - Display template defaults and migration
+
+    @MainActor
+    func testDefault_displayTemplate_isStandard() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.displayTemplate, .standard)
+    }
+
+    @MainActor
+    func testMigration_modernMinimalTemplate() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("minimal", forKey: "displayTemplate")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.displayTemplate, .minimal)
+    }
+
+    @MainActor
+    func testMigration_modernStandardTemplate() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("standard", forKey: "displayTemplate")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.displayTemplate, .standard)
+    }
+
+    @MainActor
+    func testMigration_modernDetailedTemplate() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("detailed", forKey: "displayTemplate")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.displayTemplate, .detailed)
+    }
+
+    @MainActor
+    func testMigration_legacyMinimalTemplate() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("Minimal", forKey: "displayTemplate")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.displayTemplate, .minimal)
+    }
+
+    @MainActor
+    func testMigration_invalidDisplayTemplateFallsBack() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set("foobar", forKey: "displayTemplate")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.displayTemplate, .standard, "invalid value should fall back to .standard")
+    }
+
+    // MARK: - Module visibility defaults and migration
+
+    @MainActor
+    func testDefault_moduleVisibility_isDefaultVisibility() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.moduleVisibility, .defaultVisibility)
+    }
+
+    @MainActor
+    func testMigration_savedModuleVisibility() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set(PopupModuleVisibility.sparklines.rawValue, forKey: "moduleVisibility")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.moduleVisibility, .sparklines)
+    }
+
+    @MainActor
+    func testMigration_allModulesEnabled() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set(PopupModuleVisibility.all.rawValue, forKey: "moduleVisibility")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.moduleVisibility, .all)
+    }
+
+    @MainActor
+    func testMigration_invalidModuleVisibilityFallsBack() async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.set(99, forKey: "moduleVisibility")
+        let vm = MonitorViewModel(defaults: defaults)
+        XCTAssertEqual(vm.moduleVisibility, .defaultVisibility)
+    }
 }
