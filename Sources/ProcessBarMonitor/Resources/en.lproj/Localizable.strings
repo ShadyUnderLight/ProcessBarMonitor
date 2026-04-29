@@ -67,3 +67,7 @@
 "status.diagnostics_copy_failed" = "Failed to copy diagnostics.";
 "settings.section.display" = "Display";
 "settings.section.startup" = "Startup";
+"picker.refresh_rate" = "Refresh Rate";
+"refresh_rate.power_saving" = "Power Saving";
+"refresh_rate.balanced" = "Balanced";
+"refresh_rate.real_time" = "Real-time";

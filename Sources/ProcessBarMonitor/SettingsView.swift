@@ -24,7 +24,12 @@ struct SettingsView: View {
                     Text("12").tag(12)
                     Text("20").tag(20)
                 }
-                // Side-effect (recomputeVisibleProcesses) is in MonitorViewModel.processLimit.didSet
+
+                Picker(L10n.string("picker.refresh_rate"), selection: $viewModel.refreshRatePreset) {
+                    ForEach(RefreshRatePreset.allCases) { preset in
+                        Text(preset.title).tag(preset)
+                    }
+                }
             } header: {
                 Text(L10n.string("settings.section.display"))
             }

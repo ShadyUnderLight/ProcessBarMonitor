@@ -67,3 +67,7 @@
 "status.diagnostics_copy_failed" = "复制诊断信息失败。";
 "settings.section.display" = "显示";
 "settings.section.startup" = "启动";
+"picker.refresh_rate" = "刷新频率";
+"refresh_rate.power_saving" = "省电";
+"refresh_rate.balanced" = "平衡";
+"refresh_rate.real_time" = "实时";

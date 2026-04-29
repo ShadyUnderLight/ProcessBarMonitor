@@ -22,8 +22,6 @@ private struct SettingsStore {
 @MainActor
 final class MonitorViewModel: ObservableObject {
     let launchAtLogin = LaunchAtLoginManager()
-    private let summaryRefreshInterval: UInt64 = 2_000_000_000
-    private let processRefreshInterval: TimeInterval = 10
 
     @Published private(set) var summary = SystemSummary.empty
     @Published private(set) var allProcesses: [ProcessStat] = []
@@ -41,25 +39,34 @@ final class MonitorViewModel: ObservableObject {
     @Published var processLimit: Int {
         didSet {
             settings.set(processLimit, forKey: Keys.processLimit)
-            // Immediately reflect the new row count in the visible process list.
             recomputeVisibleProcesses()
         }
     }
     @Published var temperatureMode: TemperatureMode {
         didSet {
             settings.set(temperatureMode.rawValue, forKey: Keys.temperatureMode)
-            // Immediate refresh ensures the new temperature mode is reflected
-            // without waiting for the next scheduled refresh cycle.
             Task { await refresh(forceProcesses: true) }
         }
     }
     @Published var menuBarDisplayMode: MenuBarDisplayMode {
         didSet {
             settings.set(menuBarDisplayMode.rawValue, forKey: Keys.menuBarDisplayMode)
-            // Refresh so the menu bar title format update is immediate.
             Task { await refresh(forceProcesses: false) }
         }
     }
+    @Published var refreshRatePreset: RefreshRatePreset {
+        didSet {
+            settings.set(refreshRatePreset.rawValue, forKey: Keys.refreshRatePreset)
+            applyRefreshRatePreset()
+            if let existingTask = refreshTask {
+                existingTask.cancel()
+                refreshTask = createRefreshTask()
+            }
+        }
+    }
+
+    private var currentSummaryRefreshInterval: UInt64 = 2_000_000_000
+    private var currentProcessRefreshInterval: TimeInterval = 10
 
     private let metricsProvider = SystemMetricsProvider()
     private let processProvider = ProcessSnapshotProvider.shared
@@ -74,6 +81,7 @@ final class MonitorViewModel: ObservableObject {
         static let processLimit = "processLimit"
         static let temperatureMode = "temperatureMode"
         static let menuBarDisplayMode = "menuBarDisplayMode"
+        static let refreshRatePreset = "refreshRatePreset"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -95,6 +103,13 @@ final class MonitorViewModel: ObservableObject {
             menuBarDisplayMode = parsedMenuBarDisplayMode
         } else {
             menuBarDisplayMode = .compact
+        }
+
+        if let rawRefreshRatePreset = settings.string(forKey: Keys.refreshRatePreset),
+           let parsedRefreshRatePreset = RefreshRatePreset(savedValue: rawRefreshRatePreset) {
+            refreshRatePreset = parsedRefreshRatePreset
+        } else {
+            refreshRatePreset = .balanced
         }
     }
 
@@ -119,6 +134,22 @@ final class MonitorViewModel: ObservableObject {
         return String(format: "%.1fG", gb)
     }
 
+    private func applyRefreshRatePreset() {
+        currentSummaryRefreshInterval = refreshRatePreset.summaryInterval
+        currentProcessRefreshInterval = refreshRatePreset.processInterval
+    }
+
+    private func createRefreshTask() -> Task<Void, Never> {
+        Task { [weak self] in
+            await self?.refresh(forceProcesses: true)
+            while !Task.isCancelled {
+                guard let self else { return }
+                try? await Task.sleep(nanoseconds: self.currentSummaryRefreshInterval)
+                await self.refresh()
+            }
+        }
+    }
+
     func start() {
         guard refreshTask == nil else { return }
 
@@ -131,15 +162,9 @@ final class MonitorViewModel: ObservableObject {
             }
         }
         launchAtLogin.refreshState()
+        applyRefreshRatePreset()
 
-        refreshTask = Task { [weak self] in
-            await self?.refresh(forceProcesses: true)
-            while !Task.isCancelled {
-                guard let self else { return }
-                try? await Task.sleep(nanoseconds: self.summaryRefreshInterval)
-                await self.refresh()
-            }
-        }
+        refreshTask = createRefreshTask()
     }
 
     func stop() {
@@ -159,7 +184,7 @@ final class MonitorViewModel: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
 
-        let processIntervalElapsed = Date().timeIntervalSince(lastProcessRefresh) >= processRefreshInterval
+        let processIntervalElapsed = Date().timeIntervalSince(lastProcessRefresh) >= currentProcessRefreshInterval
         let shouldRefreshProcesses = forceProcesses
             || allProcesses.isEmpty
             || (isMenuExpanded && processIntervalElapsed)
