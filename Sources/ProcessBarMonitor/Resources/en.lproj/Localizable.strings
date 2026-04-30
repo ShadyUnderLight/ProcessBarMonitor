@@ -81,3 +81,11 @@
 "toggle.top_memory" = "Top Memory Apps";
 "toggle.temperature_hint" = "Temperature Hint";
 "toggle.diagnostics" = "Diagnostics";
+"toggle.power" = "Battery";
+"summary.battery" = "Battery";
+"battery.charging" = "Charging";
+"battery.discharging" = "On Battery";
+"battery.full" = "Full";
+"battery.no_battery" = "No Battery";
+"battery.time_remaining_format" = "%dh %dm remaining";
+"battery.time_remaining_unavailable" = "Time unavailable";

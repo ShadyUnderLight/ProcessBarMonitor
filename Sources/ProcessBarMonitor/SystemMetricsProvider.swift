@@ -26,6 +26,8 @@ actor SystemMetricsProvider {
         case osxCpuTemp
     }
 
+    private let powerSourceProvider = PowerSourceProvider()
+
     func snapshot(temperatureMode: TemperatureMode) -> SystemSummary {
         let temperature = bestEffortCPUTemperature(mode: temperatureMode)
 
@@ -38,6 +40,7 @@ actor SystemMetricsProvider {
             cpuTemperatureC: temperature,
             architectureNote: architectureAndTemperatureNote(temperatureAvailable: temperature != nil, mode: temperatureMode),
             temperatureHint: temperatureHint(temperatureAvailable: temperature != nil),
+            powerSource: powerSourceProvider.getPowerSourceInfo(),
             updatedAt: Date()
         )
     }

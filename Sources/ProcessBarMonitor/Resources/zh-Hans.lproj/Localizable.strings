@@ -81,3 +81,11 @@
 "toggle.top_memory" = "内存占用最高应用";
 "toggle.temperature_hint" = "温度提示";
 "toggle.diagnostics" = "诊断信息";
+"toggle.power" = "电池";
+"summary.battery" = "电池";
+"battery.charging" = "充电中";
+"battery.discharging" = "使用电池";
+"battery.full" = "已充满";
+"battery.no_battery" = "无电池";
+"battery.time_remaining_format" = "剩余 %dh %dm";
+"battery.time_remaining_unavailable" = "无法估算";

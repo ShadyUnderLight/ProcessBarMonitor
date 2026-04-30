@@ -164,11 +164,60 @@ struct PopupModuleVisibility: OptionSet, Equatable {
     static let topMemory        = PopupModuleVisibility(rawValue: 1 << 2)
     static let temperatureHint  = PopupModuleVisibility(rawValue: 1 << 3)
     static let diagnostics      = PopupModuleVisibility(rawValue: 1 << 4)
+    static let power            = PopupModuleVisibility(rawValue: 1 << 5)
 
-    static let all: PopupModuleVisibility = [.sparklines, .topCPU, .topMemory, .temperatureHint, .diagnostics]
+    static let all: PopupModuleVisibility = [.sparklines, .topCPU, .topMemory, .temperatureHint, .diagnostics, .power]
 
     static var defaultVisibility: PopupModuleVisibility {
         [.sparklines, .topCPU, .topMemory]
+    }
+}
+
+enum BatteryStatus: String {
+    case charging
+    case discharging
+    case full
+    case noBattery
+
+    var title: String {
+        switch self {
+        case .charging:   return L10n.string("battery.charging")
+        case .discharging: return L10n.string("battery.discharging")
+        case .full:      return L10n.string("battery.full")
+        case .noBattery: return L10n.string("battery.no_battery")
+        }
+    }
+}
+
+struct PowerSourceInfo: Equatable {
+    let batteryPercent: Double
+    let status: BatteryStatus
+    let isPluggedIn: Bool
+    /// Time remaining in seconds, nil if unavailable.
+    let timeRemaining: Int?
+    /// True if battery is present on this device.
+    let hasBattery: Bool
+
+    var timeRemainingText: String {
+        guard let seconds = timeRemaining else {
+            return L10n.string("battery.time_remaining_unavailable")
+        }
+        if seconds <= 0 {
+            return L10n.string("battery.time_remaining_unavailable")
+        }
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        return L10n.format("battery.time_remaining_format", hours, minutes)
+    }
+
+    static var unavailable: PowerSourceInfo {
+        PowerSourceInfo(
+            batteryPercent: 0,
+            status: .noBattery,
+            isPluggedIn: false,
+            timeRemaining: nil,
+            hasBattery: false
+        )
     }
 }
 
@@ -238,6 +287,7 @@ struct SystemSummary {
     /// Actionable hint shown when temperature is unavailable (nil).
     /// - Intel without tool: install hint; Apple Silicon read-fail: permission check hint.
     let temperatureHint: String?
+    let powerSource: PowerSourceInfo
     let updatedAt: Date
 
     var memoryPressurePercent: Double {
@@ -254,6 +304,7 @@ struct SystemSummary {
         cpuTemperatureC: nil,
         architectureNote: "",
         temperatureHint: nil,
+        powerSource: .unavailable,
         updatedAt: Date()
     )
 }

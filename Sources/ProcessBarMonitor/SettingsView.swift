@@ -61,6 +61,10 @@ struct SettingsView: View {
                     get: { viewModel.moduleVisibility.contains(.diagnostics) },
                     set: { viewModel.moduleVisibility = $0 ? viewModel.moduleVisibility.union(.diagnostics) : viewModel.moduleVisibility.subtracting(.diagnostics) }
                 ))
+                Toggle(L10n.string("toggle.power"), isOn: Binding(
+                    get: { viewModel.moduleVisibility.contains(.power) },
+                    set: { viewModel.moduleVisibility = $0 ? viewModel.moduleVisibility.union(.power) : viewModel.moduleVisibility.subtracting(.power) }
+                ))
             } header: {
                 Text(L10n.string("settings.section.modules"))
             }

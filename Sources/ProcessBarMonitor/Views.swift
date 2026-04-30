@@ -179,6 +179,10 @@ struct MenuBarContentView: View {
                     SummaryCardView(title: L10n.string("summary.thermal"), value: viewModel.thermalText(viewModel.summary.thermalState), accent: .pink)
                 }
 
+                if viewModel.moduleVisibility.contains(.power) && viewModel.summary.powerSource.hasBattery {
+                    batterySection
+                }
+
                 if viewModel.moduleVisibility.contains(.temperatureHint) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(healthLine)
@@ -360,6 +364,26 @@ Divider()
         }
         .onDisappear {
             viewModel.setMenuExpanded(false)
+        }
+    }
+
+    private var batterySection: some View {
+        let power = viewModel.summary.powerSource
+        let accent: Color = power.isPluggedIn ? .green : (power.batteryPercent < 20 ? .red : .orange)
+        return HStack(spacing: 8) {
+            SummaryCardView(
+                title: L10n.string("summary.battery"),
+                value: String(format: "%.0f%%", power.batteryPercent),
+                subtitle: power.status.title,
+                accent: accent
+            )
+            if let timeText = power.timeRemainingText as String? {
+                SummaryCardView(
+                    title: "",
+                    value: timeText,
+                    accent: .secondary
+                )
+            }
         }
     }
 
